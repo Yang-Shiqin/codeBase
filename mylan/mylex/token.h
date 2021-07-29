@@ -4,13 +4,15 @@
 #define MAX_TOKEN_SIZE (56)
 
 typedef enum{
-    BAD_TOKEN,
-    NUM,
+    BAD_TOKEN,  // 无效记号
+    NUM,        // 数字
+    LP,         // (
+    RP,
     ADD,
     SUB,
     MUL,
     DIV,
-    CR
+    CR          // 行尾
 }TokenType;
 
 typedef struct token{

@@ -4,18 +4,18 @@
 #include "token.h"
 
 typedef enum{
-    INIT,
-    IN_INT_PART,
-    DOT_PART,
-    IN_FRAC_PART
-}LexStatus;
+    INIT,               // 初始态
+    IN_INT_PART,        // 整数部分(小数的整数/整数)
+    DOT_PART,           // 点(小数的点)
+    IN_FRAC_PART        // 小数部分
+}LexStatus;             // 词法分析状态
 
 
-int g_line_pos;
-char* g_line;
+int g_line_pos;         // 解析到该行的位置
+char* g_line;           // 正在解析的行
 
-
-void get_token(Token* token){
+// 解析当前位置的Token并把Token切出来返回(1个)
+void get_token(Token* token){   // 出参
     LexStatus status = INIT;
     char cur;
     int str_pos = 0;
@@ -59,6 +59,12 @@ void get_token(Token* token){
         case '/':
             token->type = DIV;
             return;
+        case '(':
+            token->type = LP;
+            return;
+        case ')':
+            token->type = RP;
+            return;
         case '.':
             if(status==IN_INT_PART){
                 status = DOT_PART;
@@ -85,7 +91,7 @@ void get_token(Token* token){
 
 }
 
-
+// 读入新的一行
 void set_line(char* line){
     g_line_pos = 0;
     g_line = line;

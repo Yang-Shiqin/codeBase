@@ -1,27 +1,22 @@
 #include <stdio.h>
-#include <stdlib.h>
-typedef enum{
-    BAD_TOKEN,
-    NUM,
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    CR
-}TokenType;
-int hello(int a){
-    if(a>0){
-        printf("a>0\n");
-        return 1;
-    }
-    exit(0);
-    
-}
+enum w{
+    aa,
+    bb
+};
+typedef struct b hh;
+struct b{
+    int qqq;
+    int qq;
+};
+struct a{
+    struct b aaa;
+    int aaaa;
+};
+
 int main()
 {
-    double a;
-    hello(1);
-    printf("%d\n", sizeof(TokenType));
+    struct a qqqqq;
+    printf("%u", sizeof(struct a));
     return 0;
 }
 
