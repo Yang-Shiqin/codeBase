@@ -1,26 +1,33 @@
 #include "zal_in.h"
 
 
-void stack_init(ZAL_Interpreter* inter, int size){
-    inter->stack.stack = MEM_alloc(size);
-    inter->stack.size = size;
+void zal_stack_init(ZAL_Interpreter* inter){
+    inter->stack.stack = MEM_alloc(sizeof(ZAL_Value)*STACK_ALLOC_SIZE);
+    inter->stack.size = STACK_ALLOC_SIZE;
     inter->stack.top = 0;
-
 }
 
-
-void stack_push(ZAL_Interpreter* inter, ZAL_Value *value){
-
+void zal_stack_push(ZAL_Interpreter* inter, ZAL_Value *value){
+    int new_size;
+    DBG_assert(inter->stack.top<=inter->stack.size);
+    if(inter->stack.top == inter->stack.size){
+        new_size = inter->stack.stack.size+STACK_ALLOC_SIZE;
+        inter->stack.stack = MEM_realloc(inter->stack.stack, sizeof(ZAL_Value)*new_size);
+    }
+    inter->stack.stack[(inter->stack.top)++] = *value;
 }
 
-ZAL_Value * stack_pop(ZAL_Interpreter* inter){
-
+ZAL_Value * zal_stack_pop(ZAL_Interpreter* inter){
+    DBG_assert(inter->stack.top>0);
+    return &(inter->stack.stack[--(inter->stack.top)]);
 }
 
-void stack_shrink(ZAL_Interpreter* inter, int size){
-
+void zal_stack_shrink(ZAL_Interpreter* inter, int size){
+    DBG_assert(inter->stack.top-size>=0);
+    inter->stack.top -= size;
 }
 
-ZAL_Value * stack_peek(ZAL_Interpreter* inter, int mov){
-
+ZAL_Value * zal_stack_peek(ZAL_Interpreter* inter, int mov){
+    DBG_assert(inter->stack.top-mov-1>=0);
+    return &(inter->stack.stack[inter->stack.top-mov-1]);
 }

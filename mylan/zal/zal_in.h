@@ -2,6 +2,10 @@
 #define __ZAL_IN_H__
 #include "ZAL.h"
 #include "MEM.h"
+#include "DBG.h"
+
+
+#define STACK_ALLOC_SIZE    (256)
 
 typedef enum{
     ZAL_BOOL_VALUE = 1,
@@ -63,9 +67,37 @@ typedef enum{
 }StatementType;
 
 typedef enum{
-    a
-}ErrorType;
+    PARSE_ERR = 1,
+    CHARACTER_INVALID_ERR,
+    FUNC_MUT_DEF_ERR, 
+    COMPILE_ERR_INDEX_PLUS_ONE
+}CompileErrorType;  // 可能也不能叫编译, 应该是分析
 
+typedef enum{
+    VARIABLE_NOT_FOUND_ERR = 1,
+    FUNCTION_NOT_FOUND_ERR,
+    ARGUMENT_TOO_MANY_ERR,
+    ARGUMENT_TOO_FEW_ERR,
+    NOT_BOOL_TYPE_ERR,
+    MINUS_OPERAND_TYPE_ERR,
+    BINARY_OPERAND_TYPE_ERR,
+    NOT_BOOLEAN_OPERATOR,
+    FOPEN_ARG_TYPE_ERR,
+    FCLOSE_ARG_TYPE_ERR,
+    FGETS_ARG_TYPE_ERR,
+    FPUTS_ARG_TYPE_ERR,
+    NOT_NULL_OPERATOR_ERR,
+    DIVISION_BY_ZERO_ERR,
+    NOT_STRING_OPERATOR_ERR,
+    NOT_LVALUE_ERR,
+    INDEX_OPERAND_NOT_ARRAY_ERR,
+    INDEX_OPERAND_NOT_INT_ERR,
+    ARRAY_INDEX_OUT_OF_BOUNDS_ERR,
+    NEW_ARRAY_ARG_TYPE_ERR,
+    INC_DEC_OPERAND_TYPE_ERR,
+    RESIZE_ARG_TYPE_ERR,
+    RUNTIME_ERR_INDEX_PLUS_ONE
+}RuntimeErrorType;
 
 typedef ZAL_String_tag              ZAL_String;
 typedef ZAL_Array_tag               ZAL_Array;
@@ -78,10 +110,12 @@ typedef FuncDefList_tag             FuncDefList;
 typedef ParameterList_tag           ParameterList;
 typedef ZAL_LocalEnvironment_tag    ZAL_LocalEnvironment;
 typedef Expression_tag              Expression;
+typedef ExpressionList_tag          ExpressionList;
 typedef AssignExpression_tag        AssignExpression;
 typedef BinaryExpression_tag        BinaryExpression;
 typedef FuncCallExpression_tag      FuncCallExpression;
 typedef MethodCallExpression_tag    MethodCallExpression;
+typedef IndexExpression_tag         IndexExpression;
 typedef ArgumentList_tag            ArgumentList;
 typedef Statement_tag               Statement;
 typedef StatementList_tag           StatementList;
@@ -90,10 +124,9 @@ typedef IfStatement_tag             IfStatement;
 typedef ForStatement_tag            ForStatement;
 typedef WhileStatement_tag          WhileStatement;
 typedef ReturnStatement_tag         ReturnStatement;
-
+typedef Heap_tag                    Heap;
 
 /********** 变量 ***********/
-
 // TODO
 // 无类型变量类型(就是一种类型, 和Variable比更抽象)
 struct ZAL_Value_tag{
@@ -160,9 +193,8 @@ struct FuncDefList_tag{
 // 形参列表(无类型, 所以不同类型传入不一定有事, 只要函数内操作对传入变量合法即可)
 struct ParameterList_tag{
     char            *name;
-    ArgumentList    *next;
+    ParameterList   *next;
 };
-
 
 struct ZAL_LocalEnvironment_tag{
     VariableList    *local_variable;
@@ -170,22 +202,29 @@ struct ZAL_LocalEnvironment_tag{
 };
 
 /************ 表达式 ************/
-
 struct Expression_tag{
     ExpressionType              type;
+    int                         line_number;    // 新语言脚本中句子行号(报错提示用)
     union{
         ZAL_Boolean             bool_expr;
         int                     int_expr;
         double                  double_expr;
         char                    *string_expr;
         char                    *identifier_expr;
-        AssignExpression        *assign_expr;
-        BinaryExpression        *Binary_expr;
+        AssignExpression        assign_expr;
+        BinaryExpression        binary_expr;
         Expression              *minus_expr;
         Expression              *inc_dec_expr;
-        FuncCallExpression      *func_call_expr;
-        MethodCallExpression    *method_call_expr;
+        FuncCallExpression      func_call_expr;
+        MethodCallExpression    method_call_expr;
+        IndexExpression         index_expr;         // 数组元素
+        ExpressionList          *array_liter_expr;  // 字面量数组
     }u;
+};
+
+struct ExpressionList_tag{
+    Expression      *expr;
+    ExpressionList  *next;
 };
 
 struct AssignExpression_tag{
@@ -204,7 +243,7 @@ struct FuncCallExpression_tag{
 };
 
 struct MethodCallExpression_tag{
-    Expression      *expr;          // .左边的?
+    Expression      *expr;          // .左边的
     char            *identifier;
     ArgumentList    *argv;
 };
@@ -214,10 +253,15 @@ struct ArgumentList_tag{
     ArgumentList    *next;
 };
 
+struct IndexExpression_tag{
+    Expression      *array;     // 数组元素/数组名(二维数组a[1]/一维数组a) 
+    Expression      *index;     // 数组下标
+};
 
 /************ 句子 ************/
 struct Statement_tag{
-    StatementType   type;
+    StatementType               type;
+    int                         line_number;    // 新语言脚本中句子行号(报错提示用)
     union{
         Expression              *expression_s;
         IfStatement             *if_s;
@@ -267,6 +311,7 @@ struct ReturnStatement_tag{
 struct ZAL_Interpreter_tag{
     MEM_Storage         inter_storage;
     MEM_Storage         exe_storage;
+    int                 line_number;
     FuncDefList         *func_list;
     VariableList        *g_varible;
     StatementList       *state_list;
@@ -275,7 +320,7 @@ struct ZAL_Interpreter_tag{
 };
 
 
-/************stack.c***************/    // TODO
+/************ stack.c ***************/ 
 
 /*  |xxx|
  *  |xxx|
@@ -288,10 +333,60 @@ struct Stack_tag{
     ZAL_Value   *stack;
 };
 
-void stack_init(ZAL_Interpreter* inter, int size);
-void stack_push(ZAL_Interpreter* inter, ZAL_Value *value);
-ZAL_Value * stack_pop(ZAL_Interpreter* inter);
-void stack_shrink(ZAL_Interpreter* inter, int size);
-ZAL_Value * stack_peek(ZAL_Interpreter* inter, int mov);
+void zal_stack_init(ZAL_Interpreter* inter);
+void zal_stack_push(ZAL_Interpreter* inter, ZAL_Value *value);
+ZAL_Value * zal_stack_pop(ZAL_Interpreter* inter);
+void zal_stack_shrink(ZAL_Interpreter* inter, int size);
+ZAL_Value * zal_stack_peek(ZAL_Interpreter* inter, int mov);
+
+/************ heap.c ***************/    // TODO
+
+struct Heap_tag{
+    int         size;
+    int         pointer;
+    ZAL_Value   *heap;
+};
+
+
+/************ create.c(给语法解析器用) ***************/    // TODO
+Expression* zal_alloc_expr(ExpressionType type);
+Expression* zal_create_bool_expr(ZAL_Boolean value);
+Expression* zal_create_null_expr(void);
+Expression* zal_create_assign_expr(Expression *l_value, Expression *r_value);
+Expression* zal_create_binary_expr(ExpressionType operator, Expression *left, Expression *right);
+Expression* zal_create_minus_expr(Expression *expr);
+Expression* zal_create_inc_dec_expr(Expression *expr, ExpressionType type);
+Expression* zal_create_func_call_expr(char *identifier, ArgumentList *argv);
+Expression* zal_create_method_call_expr(Expression *expr, char *identifier, ArgumentList *argv);
+
+ArgumentList* zal_create_argument_list(Expression *expr);
+ArgumentList* zal_add_argument(ArgumentList* arg_list, Expression *expr);
+ParameterList* zal_create_parameter_list(char *name);
+ParameterList* zal_add_parameter(ParameterList* para_list, char *name);
+
+
+
+/************ eval.c ***************/    // TODO
+
+
+/************ util.c ***************/    // TODO
+
+ZAL_Interpreter* zal_get_current_inter(void);
+void zal_set_current_inter(ZAL_Interpreter* inter);
+
+void* zal_alloc(size_t size);
+
+/************ .c ***************/    // TODO
+/************ .c ***************/    // TODO
+/************ .c ***************/    // TODO
+/************ .c ***************/    // TODO
+/************ .c ***************/    // TODO
+/************ .c ***************/    // TODO
+/************ .c ***************/    // TODO
+/************ .c ***************/    // TODO
+
+
+
+
 
 #endif

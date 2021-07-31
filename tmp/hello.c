@@ -16,7 +16,7 @@ struct a{
 int main()
 {
     struct a qqqqq;
-    printf("%u", sizeof(struct a));
+    printf("%u", sizeof(int));
     return 0;
 }
 

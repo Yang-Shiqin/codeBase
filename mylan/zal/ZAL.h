@@ -16,4 +16,14 @@ typedef enum{
 }ZAL_Boolean;
 
 
+
+
+ZAL_Interpreter *ZAL_create_interpreter(void);
+
+void ZAL_compile(ZAL_Interpreter *inter, FILE *fp);
+
+void ZAL_interpret(ZAL_Interpreter *inter);
+
+void ZAL_destroy_interpreter(ZAL_Interpreter *inter);
+
 #endif
