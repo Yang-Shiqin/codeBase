@@ -1,7 +1,7 @@
 #include "zal_in.h"
 
-
-ZAL_Interpreter *s_current_inter;
+// 报错时
+static ZAL_Interpreter *s_current_inter;
 
 
 

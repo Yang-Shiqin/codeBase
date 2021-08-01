@@ -1,5 +1,5 @@
 #include "zal_in.h"
-
+#include <string.h>
 
 
 Expression* zal_alloc_expr(ExpressionType type){
@@ -12,6 +12,12 @@ Expression* zal_alloc_expr(ExpressionType type){
 Expression* zal_create_bool_expr(ZAL_Boolean value){
     Expression *expr = zal_alloc_expr(BOOL_EXPRESSION);
     expr->u.bool_expr = value;
+    return expr;
+}
+
+Expression* zal_create_identifier_expr(char *identifier){
+    Expression *expr = zal_alloc_expr(IDENTIFIER_EXPRESSION);
+    expr->u.identifier_expr = identifier;
     return expr;
 }
 
@@ -69,9 +75,10 @@ ArgumentList* zal_create_argument_list(Expression *expr){
     return argument;
 }
 
-ArgumentList* zal_add_argument(ArgumentList* arg_list, Expression *expr){
+ArgumentList* zal_add_argument_to_list(ArgumentList* arg_list, Expression *expr){
     if(arg_list==NULL){
-        // TODO: error
+        arg_list = zal_create_argument_list(expr);
+        return arg_list;
     }
     ArgumentList *pos = arg_list;
     for(; pos->next; pos = pos->next) continue; // 到尾结点
@@ -86,12 +93,24 @@ ParameterList* zal_create_parameter_list(char *name){
     return para;
 }
 
-ParameterList* zal_add_parameter(ParameterList* para_list, char *name){
+ParameterList* zal_add_parameter_to_list(ParameterList* para_list, char *name){
     if(para_list==NULL){
-        // TODO: error
+        para_list = zal_create_parameter_list(name);
+        return para_list;
     }
     ParameterList *pos = para_list;
     for(; pos->next; pos = pos->next) continue; // 到尾结点
     pos->next = zal_create_parameter_list(name);
     return para_list;
+}
+
+
+
+
+
+
+char* zal_create_identifier(char *str){
+    char *ret = zal_alloc(strlen(str)+1);
+    strcpy(ret, src);
+    return ret;
 }

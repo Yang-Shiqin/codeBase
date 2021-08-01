@@ -16,6 +16,6 @@ typedef MEM_Storage_tag     MEM_Storage;
 
 #define MEM_alloc(size) (mem_alloc_func(MEM_CURRENT_CONTROLLER, size, __FILE__, __LINE__))
 #define MEM_realloc(old_ptr, size) (mem_realloc_func(MEM_CURRENT_CONTROLLER, old_ptr, size, __FILE__, __LINE__))
-
+#define MEM_free(ptr) (mem_free_func(MEM_CURRENT_CONTROLLER, ptr, __FILE__, __LINE__))
 
 #endif

@@ -15,8 +15,11 @@ struct a{
 
 int main()
 {
-    struct a qqqqq;
-    printf("%u", sizeof(int));
+    int a=0;
+    a++ = 1;
+    int aa[10] = {,,,2};
+    while(1, 0){}
+    printf("%c", '\"');
     return 0;
 }
 

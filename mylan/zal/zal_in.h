@@ -45,6 +45,7 @@ typedef enum{
     LOGICAL_AND_EXPRESSION,
     LOGICAL_OR_EXPRESSION,
     EQ_EXPRESSION,
+    NE_EXPRESSION,
     GT_EXPRESSION,
     GE_EXPRESSION,
     LT_EXPRESSION,
@@ -350,6 +351,7 @@ struct Heap_tag{
 
 /************ create.c(给语法解析器用) ***************/    // TODO
 Expression* zal_alloc_expr(ExpressionType type);
+Expression* zal_create_identifier_expr(char *identifier);
 Expression* zal_create_bool_expr(ZAL_Boolean value);
 Expression* zal_create_null_expr(void);
 Expression* zal_create_assign_expr(Expression *l_value, Expression *r_value);
@@ -358,12 +360,27 @@ Expression* zal_create_minus_expr(Expression *expr);
 Expression* zal_create_inc_dec_expr(Expression *expr, ExpressionType type);
 Expression* zal_create_func_call_expr(char *identifier, ArgumentList *argv);
 Expression* zal_create_method_call_expr(Expression *expr, char *identifier, ArgumentList *argv);
+ExpressionList* zal_create_expr_list(Expression* expr);
+ExpressionList* zal_add_expr_to_list(ExpressionList* expr_list, Expression* expr);
 
 ArgumentList* zal_create_argument_list(Expression *expr);
-ArgumentList* zal_add_argument(ArgumentList* arg_list, Expression *expr);
+ArgumentList* zal_add_argument_to_list(ArgumentList* arg_list, Expression *expr);
 ParameterList* zal_create_parameter_list(char *name);
-ParameterList* zal_add_parameter(ParameterList* para_list, char *name);
+ParameterList* zal_add_parameter_to_list(ParameterList* para_list, char *name);
 
+Statement* zal_create_expr_statement(Expression* expr);
+Statement* zal_create_if_statement(Expression *condition, Block *then_block, Elif *elif, Block *else_block);
+Elif* zal_create_elif(Expression *condition, Block *block);
+Elif* zal_add_elif_to_list(Elif *elif, Expression *condition, Block *block);
+Statement* zal_create_for_statement(Expression *init, Expression *condition, Expression *post, Block *block);
+Statement* zal_create_while_statement(Expression *condition, Block *block);
+
+StatementList* zal_create_statement_list(Statement* state);
+StatementList* zal_add_statement_to_list(StatementList* state_list, Statement* state);
+FuncDefList* zal_inter_create_func(char* identifier, ParameterList *para, Block *block);
+
+
+char* zal_create_identifier(char *str);
 
 
 /************ eval.c ***************/    // TODO
@@ -376,7 +393,12 @@ void zal_set_current_inter(ZAL_Interpreter* inter);
 
 void* zal_alloc(size_t size);
 
-/************ .c ***************/    // TODO
+/************ string.c(保存解析时字符串字面常量) ***************/
+void zal_open_str_literal(void);
+void zal_cat_str_literal(char ch);      // 解析时一个字符一个字符解析
+void zal_reset_str_literal_buf(void);
+char* zal_close_str_literal(void);
+
 /************ .c ***************/    // TODO
 /************ .c ***************/    // TODO
 /************ .c ***************/    // TODO

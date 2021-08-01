@@ -16,7 +16,7 @@ void* mem_alloc_func(MEM_Controller* ctrl, int size, char* file, int line);
 
 void* mem_realloc_func(MEM_Controller* ctrl, void* old_ptr, int size, char* file, int line);
 
-void mem_free_func(MEM_Controller* ctrl, void* ptr);
+void mem_free_func(MEM_Controller* ctrl, void* ptr, char* file, int line);
 
 
 
