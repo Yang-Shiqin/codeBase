@@ -120,7 +120,7 @@ typedef IndexExpression_tag         IndexExpression;
 typedef ArgumentList_tag            ArgumentList;
 typedef Statement_tag               Statement;
 typedef StatementList_tag           StatementList;
-typedef StatementList               Block;
+typedef Block_tag                   Block;
 typedef IfStatement_tag             IfStatement;
 typedef ForStatement_tag            ForStatement;
 typedef WhileStatement_tag          WhileStatement;
@@ -133,7 +133,7 @@ typedef Heap_tag                    Heap;
 struct ZAL_Value_tag{
     ZAL_ValueType           type;
     union{
-        ZAL_Boolean         bool_vaule;
+        ZAL_Boolean         bool_value;
         int                 int_value;
         double              double_value;
         ZAL_Object          *object;        // 对象(str/arr)
@@ -265,10 +265,10 @@ struct Statement_tag{
     int                         line_number;    // 新语言脚本中句子行号(报错提示用)
     union{
         Expression              *expression_s;
-        IfStatement             *if_s;
-        ForStatement            *for_s;
-        WhileStatement          *while_s;
-        ReturnStatement         *return_s;
+        IfStatement             if_s;
+        ForStatement            for_s;
+        WhileStatement          while_s;
+        ReturnStatement         return_s;
     }u;
 };
 
@@ -276,6 +276,11 @@ struct StatementList_tag{
     Statement       *statement;
     StatementList   *next;
 };
+
+struct Block_tag{
+    StatementList   state_list;
+};
+
 
 struct IfStatement_tag{
     Expression  *condition;     // if
@@ -349,7 +354,7 @@ struct Heap_tag{
 };
 
 
-/************ create.c(给语法解析器用) ***************/    // TODO
+/************ create.c(给语法解析器用) ***************/
 Expression* zal_alloc_expr(ExpressionType type);
 Expression* zal_create_identifier_expr(char *identifier);
 Expression* zal_create_bool_expr(ZAL_Boolean value);
@@ -360,6 +365,8 @@ Expression* zal_create_minus_expr(Expression *expr);
 Expression* zal_create_inc_dec_expr(Expression *expr, ExpressionType type);
 Expression* zal_create_func_call_expr(char *identifier, ArgumentList *argv);
 Expression* zal_create_method_call_expr(Expression *expr, char *identifier, ArgumentList *argv);
+Expression* zal_create_array_expr(ExpressionList *elem_list);
+Expression* zal_create_index_expr(Expression *array, Expression *index);
 ExpressionList* zal_create_expr_list(Expression* expr);
 ExpressionList* zal_add_expr_to_list(ExpressionList* expr_list, Expression* expr);
 
@@ -368,23 +375,31 @@ ArgumentList* zal_add_argument_to_list(ArgumentList* arg_list, Expression *expr)
 ParameterList* zal_create_parameter_list(char *name);
 ParameterList* zal_add_parameter_to_list(ParameterList* para_list, char *name);
 
+Statement* zal_alloc_stat(StatementType type);
 Statement* zal_create_expr_statement(Expression* expr);
 Statement* zal_create_if_statement(Expression *condition, Block *then_block, Elif *elif, Block *else_block);
 Elif* zal_create_elif(Expression *condition, Block *block);
 Elif* zal_add_elif_to_list(Elif *elif, Expression *condition, Block *block);
 Statement* zal_create_for_statement(Expression *init, Expression *condition, Expression *post, Block *block);
 Statement* zal_create_while_statement(Expression *condition, Block *block);
-
+Statement* zal_create_return_statement(Expression *result);
+Statement* zal_create_break_statement(void);
+Statement* zal_create_continue_statement(void);
 StatementList* zal_create_statement_list(Statement* state);
 StatementList* zal_add_statement_to_list(StatementList* state_list, Statement* state);
-FuncDefList* zal_inter_create_func(char* identifier, ParameterList *para, Block *block);
 
+Block* zal_create_block(StatementList* state_list);
+
+void zal_inter_create_function(char* identifier, ParameterList *para, Block *block);
 
 char* zal_create_identifier(char *str);
 
 
 /************ eval.c ***************/    // TODO
-
+ZAL_Value zal_eval_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
+// 用以create里常量折叠
+ZAL_Value zal_eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right);
+ZAL_Value zal_eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 
 /************ util.c ***************/    // TODO
 
@@ -392,6 +407,11 @@ ZAL_Interpreter* zal_get_current_inter(void);
 void zal_set_current_inter(ZAL_Interpreter* inter);
 
 void* zal_alloc(size_t size);
+
+VariableList *zal_search_local_variable(ZAL_Interpreter* inter, ZAL_LocalEnvironment *env, char *identifier);
+VariableList *zal_search_global_variable(ZAL_Interpreter* inter, char *identifier);
+VariableList *zal_add_global_variable(ZAL_Interpreter* inter, char *identifier);
+VariableList *zal_add_local_variable(ZAL_LocalEnvironment *env, char *identifier);
 
 /************ string.c(保存解析时字符串字面常量) ***************/
 void zal_open_str_literal(void);

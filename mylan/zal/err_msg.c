@@ -10,7 +10,7 @@ MessageFormat zal_compile_error_msg_format[] = {
 
 MessageFormat zal_runtime_error_msg_format[] = {
     {"dummy"},
-    {"未找到变量$(name)"},
+    {"未找到变量$(name)"},      // 可以去掉
     {"未找到函数$(name)"},
     {"对象没有方法$(name)"},
     {"参数过多"},

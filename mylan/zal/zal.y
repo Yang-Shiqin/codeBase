@@ -25,9 +25,11 @@
 %type <para_list>   para_list
 %type <argv_list>   argv_list
 %type <expr>        expr logical_or_expr logical_and_expr eq_ne_expr
-        compare_expr add_sub_expr math_expr minus_in_de_expr pri_expr condition
+        compare_expr add_sub_expr math_expr minus_expr in_de_expr 
+        pri_expr condition array_literal l_expr
 %type <expr_list>   expr_list
-%type <state>       state if_state
+%type <state>       state if_state for_state while_state return_state 
+        break_state continue_state
 %type <state_list>  state_list
 %type <block>       block
 %type <elsif>       elsif
@@ -85,18 +87,27 @@ para_list
 
 block
     : LC state_list RC
+    {
+        $$ = zal_create_block($2);
+    }
 	| LC RC
+    {
+        $$ = zal_create_block(NULL);
+    }
     ;
 
 expr_list
     : /*null*/
+    {
+        $$ = NULL;
+    }
 	| expr
     {
-        zal_create_expr_list($1);
+        $$ = zal_create_expr_list($1);
     }
 	| expr_list COMMA expr
     {
-        zal_add_expr_to_list($1, $3);
+        $$ = zal_add_expr_to_list($1, $3);
     }
     ;
 
@@ -122,29 +133,47 @@ if_state
 for_state
     : FOR LP expr_list SEMICOLON condition SEMICOLON expr_list RP block
     {
-
+        $$ = zal_create_for_statement($3, $5, $7, $9);
     }
     ;
 
 while_state
     : WHILE LP condition RP block
+    {
+        $$ = zal_create_while_statement($3, $5);
+    }
     ;
 
 return_state
     : RETURN expr SEMICOLON
+    {
+        $$ = zal_create_return_statement($2);
+    }
     ;
 
 break_state
     : BREAK SEMICOLON
+    {
+        $$ = zal_create_break_statement();
+    }
     ;
 
 continue_state
     : CONTINUE SEMICOLON
+    {
+        $$ = zal_create_continue_statement();
+    }
     ;
 
 state_list
     : state
+    {
+        $$ = zal_create_statement_list($1);
+    }
 	| state_list state
+    {
+        $$ = zal_add_statement_to_list($1, $2);
+    }
     ;
 
 expr
@@ -180,6 +209,9 @@ elsif
 l_expr
     : IDENTIFIER
 	| l_expr LB expr RB
+    {
+        $$ = zal_create_index_expr($1, $3);
+    }
     ;
 
 logical_or_expr
@@ -258,12 +290,16 @@ math_expr
     }
     ;
 
-minus_in_de_expr
-	: pri_expr
+minus_expr
+    : in_de_expr
 	| SUB pri_expr
     {
         $$ = zal_create_minus_expr(NE_EXPRESSION, $1, $3);
     }
+    ;
+
+in_de_expr
+	: pri_expr
 	| pri_expr INC
     {
         $$ = zal_create_inc_dec_expr($1, INCREMENT_EXPRESSION);
@@ -286,6 +322,14 @@ pri_expr
     | IDENTIFIER LP RP
     {
         $$ = zal_create_func_call_expr($1, NULL);
+    }
+    | l_expr DOT IDENTIFIER LP argv_list RP
+    {
+        $$ = zal_create_method_call_expr($1, $3, $5);
+    }
+    | l_expr DOT IDENTIFIER LP RP
+    {
+        $$ = zal_create_method_call_expr($1, $3, NULL);
     }
 	| LP expr RP
     {
@@ -311,7 +355,13 @@ pri_expr
 
 array_literal
     : LC argv_list RC
+    {
+        $$ = zal_create_array_expr($2);
+    }
 	| LC argv_list COMMA RC
+    {
+        $$ = zal_create_array_expr($2);
+    }
     ;
 
 argv_list
