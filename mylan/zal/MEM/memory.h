@@ -26,18 +26,35 @@ void* mem_alloc_func(MEM_Controller* ctrl, int size, char* file, int line);
 
 void* mem_realloc_func(MEM_Controller* ctrl, void* old_ptr, int size, char* file, int line);
 
-void mem_free_func(MEM_Controller* ctrl, void* ptr, char* file, int line);
+void mem_free_func(MEM_Controller* ctrl, void* ptr);
 
 
 
 /************ 内存存储块 ************/
 
+typedef union{
+    long    l_dummy;
+    double  d_dummy;
+    void*   v_dummy;
+}Cell;
+typedef MemoryPageList_tag  MemoryPageList;
+
+#define CELL_SIZE (sizeof(Cell))
+#define DEFAULT_PAGE_SIZE (1024) 
+
 struct MEM_Storage_tag{
     MemoryPageList      *page_list;
-
+    int                 page_size;      // 用来保证每次alloc的页大小不太小
 };
 
-MEM_Storage *mem_open_storage_func(MEM_Controller* ctrl, char *file, int line);
+struct MemoryPageList_tag{
+    int             cell_num;
+    int             use_cell_num;
+    MemoryPageList  *next;
+    Cell            cell[0];        // 柔性数组
+};
+
+MEM_Storage *mem_open_storage_func(MEM_Controller* ctrl, int page_size, char *file, int line);
 void* mem_storage_alloc_func(MEM_Controller* ctrl, MEM_Storage *storage, int size, char* file, int line);
 void mem_close_storage(MEM_Controller* ctrl, MEM_Storage *storage, char* file, int line);
 #endif

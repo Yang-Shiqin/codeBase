@@ -331,8 +331,8 @@ struct ReturnStatement_tag{
 // TODO
 // 解释器
 struct ZAL_Interpreter_tag{
-    MEM_Storage         inter_storage;
-    MEM_Storage         exe_storage;
+    MEM_Storage         *inter_storage;
+    MEM_Storage         *exe_storage;
     int                 line_number;
     FuncDefList         *func_list;
     VariableList        *g_varible;
@@ -441,12 +441,6 @@ void zal_reset_str_literal_buf(void);
 char* zal_close_str_literal(void);
 
 /************ .c ***************/    // TODO
-/************ .c ***************/    // TODO
-/************ .c ***************/    // TODO
-/************ .c ***************/    // TODO
-/************ .c ***************/    // TODO
-/************ .c ***************/    // TODO
-
 
 
 

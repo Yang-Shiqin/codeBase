@@ -76,8 +76,42 @@ void mem_free_func(MEM_Controller* ctrl, void* ptr){
 }
 
 
+#define larger(a, b) (((a)>(b))?(a):(b))
 
-
-MEM_Storage *mem_open_storage_func(MEM_Controller* ctrl, char *file, int line);
-void* mem_storage_alloc_func(MEM_Controller* ctrl, MEM_Storage *storage, int size, char* file, int line);
-void mem_close_storage(MEM_Controller* ctrl, MEM_Storage *storage, char* file, int line);
+MEM_Storage *mem_open_storage_func(MEM_Controller* ctrl, int page_size, char *file, int line){
+    MEM_Storage *stor=mem_alloc_func(ctrl, sizeof(MEM_Storage), file, line);
+    stor->page_list=NULL;
+    stor->page_size = (page_size>0) ? page_size : DEFAULT_PAGE_SIZE;
+    return stor;
+}
+void* mem_storage_alloc_func(MEM_Controller* ctrl, MEM_Storage *storage, int size, char* file, int line){
+    int cell_num;
+    cell_num = (size-1)/CELL_SIZE + 1;
+    void *p=NULL;
+    if(storage->page_list && \
+    storage->page_list->use_cell_num+cell_num<storage->page_list->cell_num){
+        p = &(storage->page_list->cell[storage->page_list->use_cell_num]);
+        storage->page_list->use_cell_num += cell_num;
+    }else{
+        int alloc_cell_num;
+        MemoryPageList *new_page=NULL;
+        alloc_cell_num = larger(cell_num, storage->page_size);
+        new_page = mem_alloc_func(ctrl, (alloc_cell_num)*CELL_SIZE+sizeof(MemoryPageList), file, line);
+        new_page->cell_num=alloc_cell_num;
+        new_page->use_cell_num=cell_num;
+        new_page->next=storage->page_list;
+        storage->page_list = new_page;
+        p = &(storage->page_list->cell[0]);
+    }
+    return p;
+}
+void mem_close_storage(MEM_Controller* ctrl, MEM_Storage *storage, char* file, int line){
+    if(storage==NULL) return;
+    MemoryPageList *pos=storage->page_list;
+    for(; pos;){
+        pos = pos->next;
+        mem_free_func(ctrl, storage->page_list);
+        storage->page_list = pos;
+    }
+    mem_free_func(ctrl, storage);
+}

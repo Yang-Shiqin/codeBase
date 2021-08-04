@@ -29,7 +29,7 @@ void MEM_set_fail_mode(MEM_Controller *ctrl, MEM_FailMode fail_mode);
 #define MEM_realloc(old_ptr, size) (mem_realloc_func(MEM_CURRENT_CONTROLLER, old_ptr, size, __FILE__, __LINE__))
 #define MEM_free(ptr) (mem_free_func(MEM_CURRENT_CONTROLLER, ptr))
 
-#define MEM_open_storage() (mem_open_storage_func(MEM_CURRENT_CONTROLLER, __FILE__, __LINE__))
+#define MEM_open_storage(page_size) (mem_open_storage_func(MEM_CURRENT_CONTROLLER, page_size, __FILE__, __LINE__))
 #define MEM_storage_alloc(storage, size) (mem_storage_alloc_func(MEM_CURRENT_CONTROLLER, storage, size, __FILE__, __LINE__))
 #define MEM_close_storage(storage) (mem_close_storage(MEM_CURRENT_CONTROLLER, storage, __FILE__, __LINE__))
 #endif

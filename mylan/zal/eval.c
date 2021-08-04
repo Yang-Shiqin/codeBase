@@ -121,8 +121,8 @@ static void covert_bool_to_int(ZAL_Value *value){
     }
 }
 ZAL_Boolean compare_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right){
-    DBG_ASSERT(left->type==ZAL_ARRAY_VALUE);
-    DBG_ASSERT(right->type==ZAL_ARRAY_VALUE);
+    // DBG_assert(left->type==ZAL_ARRAY_VALUE);
+    // DBG_assert(right->type==ZAL_ARRAY_VALUE);
     ZAL_Array *l = left->u.object->u.array;
     ZAL_Array *r = right->u.object->u.array;
     if(l==r) return ZAL_TRUE;
@@ -182,8 +182,8 @@ static void eval_eq_ne_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Val
 }
 // TODO: 补充c语言溢出不报错
 static void eval_binary_int_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
-    DBG_ASSERT(left->type==ZAL_INT_VALUE);
-    DBG_ASSERT(right->type==ZAL_INT_VALUE);
+    // DBG_assert(left->type==ZAL_INT_VALUE);
+    // DBG_assert(right->type==ZAL_INT_VALUE);
     ZAL_Value ret;
     ret.type = ZAL_INT_VALUE;
     int l, r;
@@ -236,8 +236,8 @@ static void eval_binary_int_expr(ZAL_Interpreter *inter, ExpressionType type, ZA
     zal_stack_push(inter, &ret);
 }
 static void eval_binary_double_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
-    DBG_ASSERT(my_is_digit(left));
-    DBG_ASSERT(my_is_digit(right));
+    // DBG_assert(my_is_digit(left));
+    // DBG_assert(my_is_digit(right));
     ZAL_Value ret;
     ret.type = ZAL_DOUBLE_VALUE;
     double l, r;
@@ -303,8 +303,8 @@ static void eval_binary_string_expr(ZAL_Interpreter *inter, ExpressionType type,
     }
 }
 static void eval_binary_array_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
-    DBG_ASSERT(left->type==ZAL_ARRAY_VALUE);
-    DBG_ASSERT(right->type==ZAL_ARRAY_VALUE);
+    // DBG_assert(left->type==ZAL_ARRAY_VALUE);
+    // DBG_assert(right->type==ZAL_ARRAY_VALUE);
     if(type==NE_EXPRESSION || type==EQ_EXPRESSION){
         eval_eq_ne_expr(inter, type, left, right);
         return;
@@ -410,7 +410,6 @@ static void eval_method_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *
 
 
 static void eval_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){ 
-    // DBG_assert(expr);
     if(!expr){
         ZAL_Value null;
         null.type = ZAL_NULL_VALUE;

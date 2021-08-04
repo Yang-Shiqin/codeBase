@@ -21,7 +21,7 @@ void* zal_alloc(size_t size){
 }
 
 VariableList *zal_search_local_variable(ZAL_Interpreter* inter, ZAL_LocalEnvironment *env, char *identifier){
-    DBG_ASSERT(env);
+    // DBG_assert(env);
     VariableList *pos = env->local_variable;
     for(; pos; pos = pos->next){
         if(0==strcpy(pos->name, identifier)) return pos;
