@@ -6,11 +6,21 @@
 
 
 // 内存管理器
-typedef struct MEM_Controller_tag{
+struct MEM_Controller_tag{
     FILE                *err_out_fp;
-    MEM_ErrorHandler    *err_handler;
+    MEM_ErrorHandler    err_handler;
     MEM_FailMode        fail_mode;
-}MEM_Controller;
+    Header              *block_header;
+};
+
+typedef struct Header_tag{
+    int                 size;
+    char                *file;
+    int                 line;
+    struct Header_tag   *prev;
+    struct Header_tag   *next;
+}Header;
+
 
 void* mem_alloc_func(MEM_Controller* ctrl, int size, char* file, int line);
 
@@ -23,9 +33,11 @@ void mem_free_func(MEM_Controller* ctrl, void* ptr, char* file, int line);
 /************ 内存存储块 ************/
 
 struct MEM_Storage_tag{
-    /* TODO */
+    MemoryPageList      *page_list;
+
 };
 
-void* MEM_storage_alloc_func(MEM_Controller* ctrl, MEM_Storage storage, int size, char* file, int line);
-
+MEM_Storage *mem_open_storage_func(MEM_Controller* ctrl, char *file, int line);
+void* mem_storage_alloc_func(MEM_Controller* ctrl, MEM_Storage *storage, int size, char* file, int line);
+void mem_close_storage(MEM_Controller* ctrl, MEM_Storage *storage, char* file, int line);
 #endif

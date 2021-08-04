@@ -16,7 +16,8 @@ void zal_set_current_inter(ZAL_Interpreter* inter){
 
 // 语法分析时在解释器alloc一块空间
 void* zal_alloc(size_t size){
-    /* TODO */
+    ZAL_Interpreter *inter = zal_get_current_inter();
+    return MEM_storage_alloc(inter->inter_storage, size);
 }
 
 VariableList *zal_search_local_variable(ZAL_Interpreter* inter, ZAL_LocalEnvironment *env, char *identifier){
@@ -55,3 +56,33 @@ VariableList *zal_add_local_variable(ZAL_LocalEnvironment *env, char *identifier
     return var;
 }
 
+int zal_is_true(ZAL_Value *value){
+    int res;
+    switch (value->type)
+    {
+    case ZAL_BOOL_VALUE:
+        res = value->u.bool_value;
+        break;
+    case ZAL_INT_VALUE:
+        res = value->u.int_value;
+        break;
+    case ZAL_DOUBLE_VALUE:
+        res = value->u.double_value;
+        break;
+    case ZAL_STRING_VALUE:
+        res = value->u.object->u.string!=NULL;
+        break;
+    case ZAL_ARRAY_VALUE:
+        res = value->u.object->u.array!=NULL;
+        break;
+    case ZAL_NATIVE_POINTER_VALUE:
+        res = value->u.pointer.pointer!=NULL;
+        break;
+    case ZAL_NULL_VALUE:
+        res = 0;
+        break;
+    default:
+    /* TODO: error */
+    }
+    return res;
+}

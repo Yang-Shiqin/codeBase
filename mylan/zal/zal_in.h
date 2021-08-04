@@ -68,6 +68,13 @@ typedef enum{
 }StatementType;
 
 typedef enum{
+    NORMAL_STAT_RESULT = 1,
+    BREAK_STAT_RESULT,
+    CONTINUE_STAT_RESULT,
+    RETURN_STAT_RESULT
+}StatementResultType;
+
+typedef enum{
     PARSE_ERR = 1,
     CHARACTER_INVALID_ERR,
     FUNC_MUT_DEF_ERR, 
@@ -120,6 +127,7 @@ typedef IndexExpression_tag         IndexExpression;
 typedef ArgumentList_tag            ArgumentList;
 typedef Statement_tag               Statement;
 typedef StatementList_tag           StatementList;
+typedef StatementResult_tag         StatementResult;
 typedef Block_tag                   Block;
 typedef IfStatement_tag             IfStatement;
 typedef ForStatement_tag            ForStatement;
@@ -272,6 +280,14 @@ struct Statement_tag{
     }u;
 };
 
+struct StatementResult_tag{
+    StatementResultType         type;
+    union{
+        ZAL_Value               result_v;
+    }u;
+};
+
+
 struct StatementList_tag{
     Statement       *statement;
     StatementList   *next;
@@ -395,11 +411,14 @@ void zal_inter_create_function(char* identifier, ParameterList *para, Block *blo
 char* zal_create_identifier(char *str);
 
 
-/************ eval.c ***************/    // TODO
+/************ eval.c ***************/    // TODO: 很多函数都不完整
 ZAL_Value zal_eval_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 // 用以create里常量折叠
 ZAL_Value zal_eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right);
 ZAL_Value zal_eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
+
+/************ execute.c ***************/    // TODO
+StatementResult zal_exe_stat_list(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, StatementList *list);
 
 /************ util.c ***************/    // TODO
 
@@ -413,13 +432,14 @@ VariableList *zal_search_global_variable(ZAL_Interpreter* inter, char *identifie
 VariableList *zal_add_global_variable(ZAL_Interpreter* inter, char *identifier);
 VariableList *zal_add_local_variable(ZAL_LocalEnvironment *env, char *identifier);
 
+int zal_is_true(ZAL_Value *value);
+
 /************ string.c(保存解析时字符串字面常量) ***************/
 void zal_open_str_literal(void);
 void zal_cat_str_literal(char ch);      // 解析时一个字符一个字符解析
 void zal_reset_str_literal_buf(void);
 char* zal_close_str_literal(void);
 
-/************ .c ***************/    // TODO
 /************ .c ***************/    // TODO
 /************ .c ***************/    // TODO
 /************ .c ***************/    // TODO
