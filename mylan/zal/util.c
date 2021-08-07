@@ -29,7 +29,7 @@ FuncDefList *zal_search_function(char *indentifier){
 }
 
 VariableList *zal_search_local_variable(ZAL_Interpreter* inter, ZAL_LocalEnvironment *env, char *identifier){
-    // DBG_assert(env);
+    DBG_assert(env!=NULL, (NULL));
     VariableList *pos = env->local_variable;
     for(; pos; pos = pos->next){
         if(0==strcmp(pos->name, identifier)) return pos;
@@ -159,9 +159,107 @@ char *zal_value_to_str(ZAL_Value *value){
         zal_vstr_append_string(&v_str, "null");
         break;
     default:
-        // TODO: error
-        break;
+        DBG_panic(("bad value type: %s\n", zal_value_type_to_str(value->type)));
     }
     return v_str.string;
 }
 
+char *zal_operator_to_str(ExpressionType type){
+    char *str=NULL;
+    switch (type)
+    {
+    case BOOL_EXPRESSION:
+    case INT_EXPRESSION:
+    case DOUBLE_EXPRESSION:
+    case NULL_EXPRESSION:
+    case STRING_EXPRESSION:
+    case ARRAY_EXPRESSION:
+    case INDEX_EXPRESSION:
+    case IDENTIFIER_EXPRESSION:
+        DBG_panic(("bad expression type: %d\n", type));
+    case ASSIGN_EXPRESSION:
+        str = "=";
+        break;
+    case ADD_EXPRESSION:
+        str = "+";
+        break;
+    case SUB_EXPRESSION:
+        str = "-";
+        break;
+    case MUL_EXPRESSION:
+        str = "*";
+        break;
+    case DIV_EXPRESSION:
+        str = "/";
+        break;
+    case MOD_EXPRESSION:
+        str = "%";
+        break;
+    case LOGICAL_AND_EXPRESSION:
+        str = "&&";
+        break;
+    case LOGICAL_OR_EXPRESSION:
+        str = "||";
+        break;
+    case EQ_EXPRESSION:
+        str = "==";
+        break;
+    case NE_EXPRESSION:
+        str = "!=";
+        break;
+    case GT_EXPRESSION:
+        str = ">";
+        break;
+    case GE_EXPRESSION:
+        str = ">=";
+        break;
+    case LT_EXPRESSION:
+        str = "<";
+        break;
+    case LE_EXPRESSION:
+        str = "<=";
+        break;
+    case MINUS_EXPRESSION:
+        str = "-";
+        break;
+    case INCREMENT_EXPRESSION:
+    case DECREMENT_EXPRESSION:
+    case FUNC_CALL_EXPRESSION:
+    case METHOD_CALL_EXPRESSION:
+    default:
+        DBG_panic(("bad expression type: %d\n", type));
+    }
+    return str;
+}
+
+
+char *zal_value_type_to_str(ZAL_ValueType type){
+    char *str=NULL;
+    switch (type)
+    {
+    case ZAL_BOOL_VALUE:
+        str = "ZAL_BOOL_VALUE";
+        break;
+    case ZAL_INT_VALUE:
+        str = "ZAL_INT_VALUE";
+        break;
+    case ZAL_DOUBLE_VALUE:
+        str = "ZAL_DOUBLE_VALUE";
+        break;
+    case ZAL_STRING_VALUE:
+        str = "ZAL_STRING_VALUE";
+        break;
+    case ZAL_ARRAY_VALUE:
+        str = "ZAL_ARRAY_VALUE";
+        break;
+    case ZAL_NATIVE_POINTER_VALUE:
+        str = "ZAL_NATIVE_POINTER_VALUE";
+        break;
+    case ZAL_NULL_VALUE:
+        str = "ZAL_NULL_VALUE";
+        break;
+    default:
+        DBG_panic(("bad value type: %s\n", zal_value_type_to_str(type)));
+    }
+    return str;
+}

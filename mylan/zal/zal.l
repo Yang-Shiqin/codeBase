@@ -92,8 +92,7 @@ static void increase_line_number(void){
     }else{
         sprintf(buf, "0x%02x", (unsigned char)yytext[0]);
     }
-
-    // zal_compile_error(CHARACTER_INVALID_ERR/*TODO*/);
+    zal_compile_error(CHARACTER_INVALID_ERR);
 }
 
 <COMMENT>\n {

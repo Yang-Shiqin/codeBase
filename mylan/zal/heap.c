@@ -3,8 +3,6 @@
 
 #define is_obj(x) ((x)->type==ZAL_STRING_VALUE || (x)->type==ZAL_ARRAY_VALUE)   // ZAL_Value*类型
 
-ZAL_Object* zal_literal_to_string(ZAL_Interpreter *inter, char *str);
-
 
 ZAL_Object* alloc_obj(ZAL_Interpreter *inter, ObjectType type);
 
@@ -18,9 +16,17 @@ static void gc_free_obj(ZAL_Interpreter *inter, ZAL_Object *obj);
 /*********************************** 定义区 *******************************************/
 
 ZAL_Object* zal_literal_to_string(ZAL_Interpreter *inter, char *str){
-    ZAL_Object *str_obj=alloc_obj(inter, STRING_OBJ);
+    ZAL_Object *str_obj = alloc_obj(inter, STRING_OBJ);
     str_obj->u.string.is_literal = ZAL_TRUE;
     str_obj->u.string.string = str;
+    return str_obj;
+}
+
+ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str){
+    ZAL_Object *str_obj = alloc_obj(inter, STRING_OBJ);
+    str_obj->u.string.is_literal = ZAL_FALSE;
+    str_obj->u.string.string = str;
+    inter->heap.size += strlen(str)+1;
     return str_obj;
 }
 
@@ -109,7 +115,7 @@ static void gc_reset_mark(ZAL_Object *obj){
 }
 // 标记对象(str/arr)及可达对象(只有数组会指别的对象)
 static void gc_mark(ZAL_Object *obj){
-    // DBG_assert(obj)
+    DBG_assert(obj!=NULL, (NULL));
     if(obj->marked) return;
     obj->marked = ZAL_TRUE;
     if(obj->type==ARRAY_OBJ){
@@ -127,7 +133,7 @@ static void gc_free_obj(ZAL_Interpreter *inter, ZAL_Object *obj){
         inter->heap.size -= sizeof(ZAL_Value)*(obj->u.array.alloc_size);
         MEM_free(obj->u.array.array);
     }else{
-        // DBG_assert(obj->type==STR_OBJ)
+        DBG_assert(obj->type==STRING_OBJ, (NULL));
         if(!obj->u.string.is_literal){
             inter->heap.size -= strlen(obj->u.string.string)+1;
             MEM_free(obj->u.string.string);

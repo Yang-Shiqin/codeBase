@@ -71,14 +71,24 @@
 #include <stdio.h>
 #include "zal_in.h"
 extern int yylex();
+extern char *yytext;
+
 int
 yyerror(char const *str)
-{    return 0;
+{    
+    char *near_token=NULL;
+    if(yytext[0]=='\0'){
+        near_token="EOF";
+    }else{
+        near_token=yytext;
+    }
+    zal_compile_error(PARSE_ERR, near_token);
+    return 0;
 }
 
 #define YYDEBUG 1
 
-#line 82 "y.tab.c"
+#line 92 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -216,7 +226,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 12 "zal.y"
+#line 22 "zal.y"
 
     char            *identifier;
     ParameterList   *para_list;
@@ -228,7 +238,7 @@ union YYSTYPE
     Block           *block;
     Elif           *elif;
 
-#line 232 "y.tab.c"
+#line 242 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -607,15 +617,15 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    46,    46,    47,    51,    52,    60,    64,    71,    75,
-      76,    77,    78,    79,    80,    84,    88,    95,    99,   107,
-     110,   114,   121,   125,   129,   133,   140,   147,   154,   161,
-     168,   175,   179,   186,   190,   194,   198,   205,   209,   216,
-     220,   227,   228,   235,   236,   243,   244,   248,   255,   256,
-     260,   264,   268,   275,   276,   280,   287,   288,   292,   296,
-     303,   304,   311,   312,   316,   323,   324,   325,   326,   327,
-     331,   335,   339,   343,   347,   351,   355,   359,   366,   370,
-     377,   381
+       0,    56,    56,    57,    61,    62,    70,    74,    81,    85,
+      86,    87,    88,    89,    90,    94,    98,   105,   109,   117,
+     120,   124,   131,   135,   139,   143,   150,   157,   164,   171,
+     178,   185,   189,   196,   200,   204,   208,   215,   219,   226,
+     230,   237,   238,   245,   246,   253,   254,   258,   265,   266,
+     270,   274,   278,   285,   286,   290,   297,   298,   302,   306,
+     313,   314,   321,   322,   326,   333,   334,   335,   336,   337,
+     341,   345,   349,   353,   357,   361,   365,   369,   376,   380,
+     387,   391
 };
 #endif
 
@@ -1533,472 +1543,472 @@ yyreduce:
   switch (yyn)
     {
   case 5:
-#line 53 "zal.y"
+#line 63 "zal.y"
     {
         ZAL_Interpreter* inter = zal_get_current_inter();
         inter->state_list = zal_add_statement_to_list(inter->state_list, (yyvsp[0].state));
     }
-#line 1542 "y.tab.c"
+#line 1552 "y.tab.c"
     break;
 
   case 6:
-#line 61 "zal.y"
+#line 71 "zal.y"
     {
         zal_inter_create_function((yyvsp[-4].identifier), (yyvsp[-2].para_list), (yyvsp[0].block));
     }
-#line 1550 "y.tab.c"
+#line 1560 "y.tab.c"
     break;
 
   case 7:
-#line 65 "zal.y"
+#line 75 "zal.y"
     {
         zal_inter_create_function((yyvsp[-3].identifier), NULL, (yyvsp[0].block));
     }
-#line 1558 "y.tab.c"
+#line 1568 "y.tab.c"
     break;
 
   case 8:
-#line 72 "zal.y"
+#line 82 "zal.y"
     {
         (yyval.state) = zal_create_expr_statement((yyvsp[-1].expr));
     }
-#line 1566 "y.tab.c"
+#line 1576 "y.tab.c"
     break;
 
   case 15:
-#line 85 "zal.y"
+#line 95 "zal.y"
     {
         (yyval.para_list) = zal_create_parameter_list((yyvsp[0].identifier));
     }
-#line 1574 "y.tab.c"
+#line 1584 "y.tab.c"
     break;
 
   case 16:
-#line 89 "zal.y"
+#line 99 "zal.y"
     {
         (yyval.para_list) = zal_add_parameter_to_list((yyvsp[-2].para_list), (yyvsp[0].identifier));
     }
-#line 1582 "y.tab.c"
+#line 1592 "y.tab.c"
     break;
 
   case 17:
-#line 96 "zal.y"
+#line 106 "zal.y"
     {
         (yyval.block) = zal_create_block((yyvsp[-1].state_list));
     }
-#line 1590 "y.tab.c"
+#line 1600 "y.tab.c"
     break;
 
   case 18:
-#line 100 "zal.y"
+#line 110 "zal.y"
     {
         (yyval.block) = zal_create_block(NULL);
     }
-#line 1598 "y.tab.c"
+#line 1608 "y.tab.c"
     break;
 
   case 19:
-#line 107 "zal.y"
+#line 117 "zal.y"
     {
         (yyval.expr_list) = NULL;
     }
-#line 1606 "y.tab.c"
+#line 1616 "y.tab.c"
     break;
 
   case 20:
-#line 111 "zal.y"
+#line 121 "zal.y"
     {
         (yyval.expr_list) = zal_create_expr_list((yyvsp[0].expr));
     }
-#line 1614 "y.tab.c"
+#line 1624 "y.tab.c"
     break;
 
   case 21:
-#line 115 "zal.y"
+#line 125 "zal.y"
     {
         (yyval.expr_list) = zal_add_expr_to_list((yyvsp[-2].expr_list), (yyvsp[0].expr));
     }
-#line 1622 "y.tab.c"
+#line 1632 "y.tab.c"
     break;
 
   case 22:
-#line 122 "zal.y"
+#line 132 "zal.y"
     {
         (yyval.state) = zal_create_if_statement((yyvsp[-2].expr), (yyvsp[0].block), NULL, NULL);
     }
-#line 1630 "y.tab.c"
+#line 1640 "y.tab.c"
     break;
 
   case 23:
-#line 126 "zal.y"
+#line 136 "zal.y"
     {
         (yyval.state) = zal_create_if_statement((yyvsp[-3].expr), (yyvsp[-1].block), (yyvsp[0].elif), NULL);
     }
-#line 1638 "y.tab.c"
+#line 1648 "y.tab.c"
     break;
 
   case 24:
-#line 130 "zal.y"
+#line 140 "zal.y"
     {
         (yyval.state) = zal_create_if_statement((yyvsp[-4].expr), (yyvsp[-2].block), NULL, (yyvsp[0].block));
     }
-#line 1646 "y.tab.c"
+#line 1656 "y.tab.c"
     break;
 
   case 25:
-#line 134 "zal.y"
+#line 144 "zal.y"
     {
         (yyval.state) = zal_create_if_statement((yyvsp[-5].expr), (yyvsp[-3].block), (yyvsp[-2].elif), (yyvsp[0].block));
     }
-#line 1654 "y.tab.c"
+#line 1664 "y.tab.c"
     break;
 
   case 26:
-#line 141 "zal.y"
+#line 151 "zal.y"
     {
         (yyval.state) = zal_create_for_statement((yyvsp[-6].expr), (yyvsp[-4].expr), (yyvsp[-2].expr), (yyvsp[0].block));
     }
-#line 1662 "y.tab.c"
+#line 1672 "y.tab.c"
     break;
 
   case 27:
-#line 148 "zal.y"
+#line 158 "zal.y"
     {
         (yyval.state) = zal_create_while_statement((yyvsp[-2].expr), (yyvsp[0].block));
     }
-#line 1670 "y.tab.c"
+#line 1680 "y.tab.c"
     break;
 
   case 28:
-#line 155 "zal.y"
+#line 165 "zal.y"
     {
         (yyval.state) = zal_create_return_statement((yyvsp[-1].expr));
     }
-#line 1678 "y.tab.c"
+#line 1688 "y.tab.c"
     break;
 
   case 29:
-#line 162 "zal.y"
+#line 172 "zal.y"
     {
         (yyval.state) = zal_create_break_statement();
     }
-#line 1686 "y.tab.c"
+#line 1696 "y.tab.c"
     break;
 
   case 30:
-#line 169 "zal.y"
+#line 179 "zal.y"
     {
         (yyval.state) = zal_create_continue_statement();
     }
-#line 1694 "y.tab.c"
+#line 1704 "y.tab.c"
     break;
 
   case 31:
-#line 176 "zal.y"
+#line 186 "zal.y"
     {
         (yyval.state_list) = zal_create_statement_list((yyvsp[0].state));
     }
-#line 1702 "y.tab.c"
+#line 1712 "y.tab.c"
     break;
 
   case 32:
-#line 180 "zal.y"
+#line 190 "zal.y"
     {
         (yyval.state_list) = zal_add_statement_to_list((yyvsp[-1].state_list), (yyvsp[0].state));
     }
-#line 1710 "y.tab.c"
+#line 1720 "y.tab.c"
     break;
 
   case 33:
-#line 187 "zal.y"
+#line 197 "zal.y"
     {
         (yyval.expr) = zal_create_assign_expr((yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1718 "y.tab.c"
+#line 1728 "y.tab.c"
     break;
 
   case 35:
-#line 195 "zal.y"
+#line 205 "zal.y"
     {
         (yyval.expr) = (yyvsp[0].expr);
     }
-#line 1726 "y.tab.c"
+#line 1736 "y.tab.c"
     break;
 
   case 36:
-#line 199 "zal.y"
+#line 209 "zal.y"
     {
         (yyval.expr) = (yyvsp[0].expr);
     }
-#line 1734 "y.tab.c"
+#line 1744 "y.tab.c"
     break;
 
   case 37:
-#line 206 "zal.y"
+#line 216 "zal.y"
     {
         (yyval.elif) = zal_create_elif((yyvsp[-2].expr), (yyvsp[0].block));
     }
-#line 1742 "y.tab.c"
+#line 1752 "y.tab.c"
     break;
 
   case 38:
-#line 210 "zal.y"
+#line 220 "zal.y"
     {
         (yyval.elif) = zal_add_elif_to_list((yyvsp[-5].elif), (yyvsp[-2].expr), (yyvsp[0].block));
     }
-#line 1750 "y.tab.c"
+#line 1760 "y.tab.c"
     break;
 
   case 39:
-#line 217 "zal.y"
+#line 227 "zal.y"
     {
         (yyval.expr) = zal_create_identifier_expr((yyvsp[0].identifier));
     }
-#line 1758 "y.tab.c"
+#line 1768 "y.tab.c"
     break;
 
   case 40:
-#line 221 "zal.y"
+#line 231 "zal.y"
     {
         (yyval.expr) = zal_create_index_expr((yyvsp[-3].expr), (yyvsp[-1].expr));
     }
-#line 1766 "y.tab.c"
+#line 1776 "y.tab.c"
     break;
 
   case 42:
-#line 229 "zal.y"
+#line 239 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(LOGICAL_OR_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1774 "y.tab.c"
+#line 1784 "y.tab.c"
     break;
 
   case 44:
-#line 237 "zal.y"
+#line 247 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(LOGICAL_AND_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1782 "y.tab.c"
+#line 1792 "y.tab.c"
     break;
 
   case 46:
-#line 245 "zal.y"
+#line 255 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(EQ_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1790 "y.tab.c"
+#line 1800 "y.tab.c"
     break;
 
   case 47:
-#line 249 "zal.y"
+#line 259 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(NE_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1798 "y.tab.c"
+#line 1808 "y.tab.c"
     break;
 
   case 49:
-#line 257 "zal.y"
+#line 267 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(GT_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1806 "y.tab.c"
+#line 1816 "y.tab.c"
     break;
 
   case 50:
-#line 261 "zal.y"
+#line 271 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(GE_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1814 "y.tab.c"
+#line 1824 "y.tab.c"
     break;
 
   case 51:
-#line 265 "zal.y"
+#line 275 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(LT_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1822 "y.tab.c"
+#line 1832 "y.tab.c"
     break;
 
   case 52:
-#line 269 "zal.y"
+#line 279 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(LE_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1830 "y.tab.c"
+#line 1840 "y.tab.c"
     break;
 
   case 54:
-#line 277 "zal.y"
+#line 287 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(ADD_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1838 "y.tab.c"
+#line 1848 "y.tab.c"
     break;
 
   case 55:
-#line 281 "zal.y"
+#line 291 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(SUB_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1846 "y.tab.c"
+#line 1856 "y.tab.c"
     break;
 
   case 57:
-#line 289 "zal.y"
+#line 299 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(MUL_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1854 "y.tab.c"
+#line 1864 "y.tab.c"
     break;
 
   case 58:
-#line 293 "zal.y"
+#line 303 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(DIV_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1862 "y.tab.c"
+#line 1872 "y.tab.c"
     break;
 
   case 59:
-#line 297 "zal.y"
+#line 307 "zal.y"
     {
         (yyval.expr) = zal_create_binary_expr(MOD_EXPRESSION, (yyvsp[-2].expr), (yyvsp[0].expr));
     }
-#line 1870 "y.tab.c"
+#line 1880 "y.tab.c"
     break;
 
   case 61:
-#line 305 "zal.y"
+#line 315 "zal.y"
     {
         (yyval.expr) = zal_create_minus_expr((yyvsp[0].expr));
     }
-#line 1878 "y.tab.c"
+#line 1888 "y.tab.c"
     break;
 
   case 63:
-#line 313 "zal.y"
+#line 323 "zal.y"
     {
         (yyval.expr) = zal_create_inc_dec_expr((yyvsp[-1].expr), INCREMENT_EXPRESSION);
     }
-#line 1886 "y.tab.c"
+#line 1896 "y.tab.c"
     break;
 
   case 64:
-#line 317 "zal.y"
+#line 327 "zal.y"
     {
         (yyval.expr) = zal_create_inc_dec_expr((yyvsp[-1].expr), DECREMENT_EXPRESSION);
     }
-#line 1894 "y.tab.c"
+#line 1904 "y.tab.c"
     break;
 
   case 69:
-#line 328 "zal.y"
+#line 338 "zal.y"
     {
         (yyval.expr) = zal_create_func_call_expr((yyvsp[-3].identifier), (yyvsp[-1].argv_list));
     }
-#line 1902 "y.tab.c"
+#line 1912 "y.tab.c"
     break;
 
   case 70:
-#line 332 "zal.y"
+#line 342 "zal.y"
     {
         (yyval.expr) = zal_create_func_call_expr((yyvsp[-2].identifier), NULL);
     }
-#line 1910 "y.tab.c"
+#line 1920 "y.tab.c"
     break;
 
   case 71:
-#line 336 "zal.y"
+#line 346 "zal.y"
     {
         (yyval.expr) = zal_create_method_call_expr((yyvsp[-5].expr), (yyvsp[-3].identifier), (yyvsp[-1].argv_list));
     }
-#line 1918 "y.tab.c"
+#line 1928 "y.tab.c"
     break;
 
   case 72:
-#line 340 "zal.y"
+#line 350 "zal.y"
     {
         (yyval.expr) = zal_create_method_call_expr((yyvsp[-4].expr), (yyvsp[-2].identifier), NULL);
     }
-#line 1926 "y.tab.c"
+#line 1936 "y.tab.c"
     break;
 
   case 73:
-#line 344 "zal.y"
+#line 354 "zal.y"
     {
         (yyval.expr) = (yyvsp[-1].expr);
     }
-#line 1934 "y.tab.c"
+#line 1944 "y.tab.c"
     break;
 
   case 74:
-#line 348 "zal.y"
+#line 358 "zal.y"
     {
         (yyval.expr) = zal_create_identifier_expr((yyvsp[0].identifier));
     }
-#line 1942 "y.tab.c"
+#line 1952 "y.tab.c"
     break;
 
   case 75:
-#line 352 "zal.y"
+#line 362 "zal.y"
     {
         (yyval.expr) = zal_create_null_expr();
     }
-#line 1950 "y.tab.c"
+#line 1960 "y.tab.c"
     break;
 
   case 76:
-#line 356 "zal.y"
+#line 366 "zal.y"
     {
         (yyval.expr) = zal_create_bool_expr(ZAL_TRUE);
     }
-#line 1958 "y.tab.c"
+#line 1968 "y.tab.c"
     break;
 
   case 77:
-#line 360 "zal.y"
+#line 370 "zal.y"
     {
         (yyval.expr) = zal_create_bool_expr(ZAL_FALSE);
     }
-#line 1966 "y.tab.c"
+#line 1976 "y.tab.c"
     break;
 
   case 78:
-#line 367 "zal.y"
+#line 377 "zal.y"
     {
         (yyval.expr) = zal_create_array_expr((yyvsp[-1].expr_list));
     }
-#line 1974 "y.tab.c"
+#line 1984 "y.tab.c"
     break;
 
   case 79:
-#line 371 "zal.y"
+#line 381 "zal.y"
     {
         (yyval.expr) = zal_create_array_expr((yyvsp[-2].expr_list));
     }
-#line 1982 "y.tab.c"
+#line 1992 "y.tab.c"
     break;
 
   case 80:
-#line 378 "zal.y"
+#line 388 "zal.y"
     {
         (yyval.argv_list) = zal_create_argument_list((yyvsp[0].expr));
     }
-#line 1990 "y.tab.c"
+#line 2000 "y.tab.c"
     break;
 
   case 81:
-#line 382 "zal.y"
+#line 392 "zal.y"
     {
         (yyval.argv_list) = zal_add_argument_to_list((yyvsp[-2].argv_list), (yyvsp[0].expr));
     }
-#line 1998 "y.tab.c"
+#line 2008 "y.tab.c"
     break;
 
 
-#line 2002 "y.tab.c"
+#line 2012 "y.tab.c"
 
       default: break;
     }

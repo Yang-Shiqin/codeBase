@@ -2,7 +2,7 @@
 #define __ZAL_IN_H__
 #include "ZAL.h"
 #include "MEM.h"
-// #include "DBG.h"
+#include "DBG.h"
 
 #define LINE_BUF_SIZE       (1024)
 #define STACK_ALLOC_SIZE    (256)
@@ -83,14 +83,12 @@ typedef enum{
 }CompileErrorType;  // 可能也不能叫编译, 应该是分析
 
 typedef enum{
-    VARIABLE_NOT_FOUND_ERR = 1,
-    FUNCTION_NOT_FOUND_ERR,
+    FUNCTION_NOT_FOUND_ERR = 1,
     ARGUMENT_TOO_MANY_ERR,
     ARGUMENT_TOO_FEW_ERR,
     NOT_BOOL_TYPE_ERR,
     MINUS_OPERAND_TYPE_ERR,
     BINARY_OPERAND_TYPE_ERR,
-    NOT_BOOLEAN_OPERATOR,
     FOPEN_ARG_TYPE_ERR,
     FCLOSE_ARG_TYPE_ERR,
     FGETS_ARG_TYPE_ERR,
@@ -387,6 +385,7 @@ struct Heap_tag{
 };
 
 ZAL_Object* zal_literal_to_string(ZAL_Interpreter *inter, char *str);
+ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str);
 
 void zal_mark_sweep_gc(ZAL_Interpreter* inter);
 
@@ -458,6 +457,8 @@ int zal_is_true(ZAL_Value *value);
 void zal_vstr_append_ch(VStr *string, char ch);
 void zal_vstr_append_string(VStr *string, char *add_str);
 char *zal_value_to_str(ZAL_Value *value);
+char *zal_operator_to_str(ExpressionType type);
+char *zal_value_type_to_str(ZAL_ValueType type);
 
 /************ string.c(保存解析时字符串字面常量) ***************/
 void zal_open_str_literal(void);
@@ -482,8 +483,8 @@ ZAL_Value zal_nv_array  (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int 
 void zal_add_std_fp(ZAL_Interpreter* inter);
 
 /************ error.c ***************/    // TODO
-void zal_compile_error(CompileErrorType ceid, char *format, ...);     // ...为报错信息
-void zal_runtime_error(int line, RuntimeErrorType reid, char *format, ...);
+void zal_compile_error(CompileErrorType ceid, ...);     // ...为报错信息
+void zal_runtime_error(int line, RuntimeErrorType reid, ...);
 
 /************ 解释器 ************/
 // TODO

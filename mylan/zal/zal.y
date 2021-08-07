@@ -2,9 +2,19 @@
 #include <stdio.h>
 #include "zal_in.h"
 extern int yylex();
+extern char *yytext;
+
 int
 yyerror(char const *str)
-{    return 0;
+{    
+    char *near_token=NULL;
+    if(yytext[0]=='\0'){
+        near_token="EOF";
+    }else{
+        near_token=yytext;
+    }
+    zal_compile_error(PARSE_ERR, near_token);
+    return 0;
 }
 
 #define YYDEBUG 1

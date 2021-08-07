@@ -8,7 +8,7 @@ void zal_stack_init(ZAL_Interpreter* inter){
 }
 
 void zal_stack_push(ZAL_Interpreter* inter, ZAL_Value *value){
-    // DBG_assert(inter->stack.top<=inter->stack.size);
+    DBG_assert(inter->stack.top<=inter->stack.size, (NULL));
     if(inter->stack.top == inter->stack.size){
         inter->stack.size += STACK_ALLOC_SIZE;
         inter->stack.stack = (ZAL_Value*)MEM_realloc(inter->stack.stack, sizeof(ZAL_Value)*inter->stack.size);
@@ -17,17 +17,17 @@ void zal_stack_push(ZAL_Interpreter* inter, ZAL_Value *value){
 }
 
 ZAL_Value zal_stack_pop(ZAL_Interpreter* inter){
-    // DBG_assert(inter->stack.top>0);
+    DBG_assert(inter->stack.top>0, (NULL));
     ZAL_Value ret=inter->stack.stack[--(inter->stack.top)];
     return ret;
 }
 
 void zal_stack_shrink(ZAL_Interpreter* inter, int size){
-    // DBG_assert(inter->stack.top-size>=0);
+    DBG_assert(inter->stack.top-size>=0, (NULL));
     inter->stack.top -= size;
 }
 
 ZAL_Value * zal_stack_peek(ZAL_Interpreter* inter, int mov){
-    // DBG_assert(inter->stack.top-mov-1>=0);
+    DBG_assert(inter->stack.top-mov-1>=0, (NULL));
     return &(inter->stack.stack[inter->stack.top-mov-1]);
 }

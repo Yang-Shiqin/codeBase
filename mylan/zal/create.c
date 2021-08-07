@@ -46,7 +46,7 @@ static Expression convert_value_to_expression(ZAL_Value *value, int line_number)
         expr.type = DOUBLE_EXPRESSION;
         expr.u.double_expr = value->u.double_value;
     }else{
-        // DBG_assert(value->type == ZAL_BOOL_VALUE);
+        DBG_assert(value->type == ZAL_BOOL_VALUE, ("value->type=%s\n", zal_value_type_to_str(value->type)));
         expr.type = BOOL_EXPRESSION;
         expr.u.bool_expr = value->u.bool_value;
     }

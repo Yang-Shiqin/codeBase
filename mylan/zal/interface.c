@@ -44,10 +44,9 @@ void ZAL_compile(ZAL_Interpreter *inter, FILE *fp){
 
 void ZAL_interpret(ZAL_Interpreter *inter){
     inter->exe_storage = MEM_open_storage(0);
-    // TODO
     zal_add_std_fp(inter);
     zal_exe_stat_list(inter, NULL, inter->state_list);
-
+    zal_mark_sweep_gc(inter);
 }
 
 void ZAL_destroy_interpreter(ZAL_Interpreter *inter){

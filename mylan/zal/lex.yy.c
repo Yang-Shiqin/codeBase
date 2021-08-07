@@ -1078,14 +1078,13 @@ YY_RULE_SETUP
     }else{
         sprintf(buf, "0x%02x", (unsigned char)yytext[0]);
     }
-
-    // zal_compile_error(CHARACTER_INVALID_ERR/*TODO*/);
+    zal_compile_error(CHARACTER_INVALID_ERR);
 }
 	YY_BREAK
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 99 "zal.l"
+#line 98 "zal.l"
 {
     increase_line_number();
     BEGIN INITIAL;
@@ -1093,12 +1092,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 103 "zal.l"
+#line 102 "zal.l"
 ;
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 105 "zal.l"
+#line 104 "zal.l"
 {
     Expression *expr = zal_alloc_expr(STRING_EXPRESSION);
     expr->u.string_expr = zal_close_str_literal();
@@ -1110,7 +1109,7 @@ YY_RULE_SETUP
 case 50:
 /* rule 50 can match eol */
 YY_RULE_SETUP
-#line 112 "zal.l"
+#line 111 "zal.l"
 {
     zal_cat_str_literal('\n');
     increase_line_number();
@@ -1118,42 +1117,42 @@ YY_RULE_SETUP
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 116 "zal.l"
+#line 115 "zal.l"
 zal_cat_str_literal('"');
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 117 "zal.l"
+#line 116 "zal.l"
 zal_cat_str_literal('\n');
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 118 "zal.l"
+#line 117 "zal.l"
 zal_cat_str_literal('\t');
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 119 "zal.l"
+#line 118 "zal.l"
 zal_cat_str_literal('\\');
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 120 "zal.l"
+#line 119 "zal.l"
 zal_cat_str_literal('\'');
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 121 "zal.l"
+#line 120 "zal.l"
 zal_cat_str_literal('\'');
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 122 "zal.l"
+#line 121 "zal.l"
 zal_cat_str_literal(yytext[0]);
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 124 "zal.l"
+#line 123 "zal.l"
 {
     Expression *expr = zal_alloc_expr(STRING_EXPRESSION);
     expr->u.string_expr = zal_close_str_literal();
@@ -1165,7 +1164,7 @@ YY_RULE_SETUP
 case 59:
 /* rule 59 can match eol */
 YY_RULE_SETUP
-#line 131 "zal.l"
+#line 130 "zal.l"
 {
     zal_cat_str_literal('\n');
     increase_line_number();
@@ -1173,45 +1172,45 @@ YY_RULE_SETUP
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 135 "zal.l"
+#line 134 "zal.l"
 zal_cat_str_literal('\'');
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 136 "zal.l"
+#line 135 "zal.l"
 zal_cat_str_literal('\n');
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 137 "zal.l"
+#line 136 "zal.l"
 zal_cat_str_literal('\t');
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 138 "zal.l"
+#line 137 "zal.l"
 zal_cat_str_literal('\\');
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 139 "zal.l"
+#line 138 "zal.l"
 zal_cat_str_literal('"');
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 140 "zal.l"
+#line 139 "zal.l"
 zal_cat_str_literal('"');
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 141 "zal.l"
+#line 140 "zal.l"
 zal_cat_str_literal(yytext[0]);
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 143 "zal.l"
+#line 142 "zal.l"
 ECHO;
 	YY_BREAK
-#line 1215 "lex.yy.c"
+#line 1214 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 case YY_STATE_EOF(IN_STRING_SIG):
@@ -2219,5 +2218,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 143 "zal.l"
+#line 142 "zal.l"
 

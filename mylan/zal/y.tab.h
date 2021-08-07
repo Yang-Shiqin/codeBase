@@ -139,7 +139,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 12 "zal.y"
+#line 22 "zal.y"
 
     char            *identifier;
     ParameterList   *para_list;

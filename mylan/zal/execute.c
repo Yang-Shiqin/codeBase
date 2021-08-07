@@ -46,8 +46,7 @@ static StatementResult exe_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironment *en
         result = exe_return_stat(inter, env, stat);
         break;
     default:
-        /* TODO: error */
-        break;
+        DBG_panic(("bad statement type: %d\n", stat->type));
     }
     return result;
 }

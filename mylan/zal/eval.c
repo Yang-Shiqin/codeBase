@@ -36,6 +36,7 @@ static void covert_bool_to_int(ZAL_Value *value);
 static ZAL_Value *get_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static ZAL_Value *get_array_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static ZAL_Boolean compare_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right);
+ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right);
 
 /*********************************** 定义区 *******************************************/
 ZAL_Value zal_eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right){
@@ -119,8 +120,7 @@ static void eval_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Express
         eval_method_call_expr(inter, env, expr);
         break;
     default:
-        /* TODO: error */
-        break;
+        DBG_panic(("bad expression type: %d\n", expr->type));
     }
 }
 
@@ -149,7 +149,7 @@ static void eval_null_expr(ZAL_Interpreter *inter){
     zal_stack_push(inter, &ret);
 }
 
-/* TODO */
+// 字面常量不在堆里
 static void eval_string_expr(ZAL_Interpreter *inter, char *string_expr){
     ZAL_Value ret;
     ret.type = ZAL_STRING_VALUE;
@@ -219,12 +219,12 @@ static void eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, 
     }else if((l_v.type==ZAL_ARRAY_VALUE) && (r_v.type==ZAL_ARRAY_VALUE)){
         eval_binary_array_expr(inter, type, &l_v, &r_v);
     }else{
-        /* TODO: error */
+        DBG_panic(("eval_binary_expr fail: %s %s %s\n", \
+            zal_value_type_to_str(l_v.type), zal_operator_to_str(type), zal_value_type_to_str(r_v.type)));
     }
 
 }
 
-// TODO: 只有bool能&& ||
 static void eval_logical_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right){
     ZAL_Value ret, l_v, r_v;
     eval_expr(inter, env, left);
@@ -232,7 +232,7 @@ static void eval_logical_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env,
     r_v = zal_stack_pop(inter);
     l_v = zal_stack_pop(inter);
     if(r_v.type!=ZAL_BOOL_VALUE || r_v.type!=ZAL_BOOL_VALUE){
-        /* TODO: error */
+        zal_runtime_error(inter->line_number, NOT_BOOL_TYPE_ERR);
     }
     ret.type = ZAL_BOOL_VALUE;
     if(type == LOGICAL_AND_EXPRESSION){
@@ -243,7 +243,6 @@ static void eval_logical_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env,
     zal_stack_push(inter, &ret);
 }
 
-/* TODO */
 static void eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
     ZAL_Value value;
     value = zal_eval_expr(inter, env, expr);
@@ -262,8 +261,7 @@ static void eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, E
         value.u.double_value = -value.u.double_value;
         break;
     default:
-        /* TODO: error */
-        break;
+        zal_runtime_error(inter->line_number, MINUS_OPERAND_TYPE_ERR);
     }
     zal_stack_push(inter, &value);
 }
@@ -271,7 +269,7 @@ static void eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, E
 static void eval_inc_dec_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *inc_dec_expr){
     ZAL_Value *ret = get_lvalue(inter, env, inc_dec_expr);
     if(ret->type != ZAL_INT_VALUE){
-        /* TODO: error */
+        zal_runtime_error(inter->line_number, INC_DEC_OPERAND_TYPE_ERR);
     }
     if(type==INCREMENT_EXPRESSION){
         ret->u.int_value++;
@@ -281,17 +279,17 @@ static void eval_inc_dec_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env,
     zal_stack_push(inter, ret);
 }
 
-/* TODO: error */
+
 static void eval_func_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
     FuncDefList *func = zal_search_function(expr->u.func_call_expr.identifier);
     ZAL_LocalEnvironment *sub_env = alloc_local_env(inter);
-    if(func==NULL){
-        // zal_runtime_error(); // TODO: 找不到函数
+    if(func==NULL){ // 找不到函数
+        zal_runtime_error(inter->line_number, FUNCTION_NOT_FOUND_ERR, expr->u.func_call_expr.identifier);
     }
     if(func->type == ZAL_FUNC_DEF){
         call_zal_func(inter, env, sub_env, expr, func);
     }else{
-        // DBG_assert(func->type==NATIVE_FUNC_DEF);
+        DBG_assert(func->type==NATIVE_FUNC_DEF, (NULL));
         call_native_func(inter, env, sub_env, expr, func);
     }
     destroy_local_env(inter);
@@ -340,8 +338,7 @@ static void eval_eq_ne_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Val
                 ret.u.bool_value = ZAL_TRUE;
                 break;
             default:
-                /* TODO: error */
-                break;
+                DBG_panic(("bad value type: %s\n", zal_value_type_to_str(left->type)));
             }
         }else{
             ret.u.bool_value = ZAL_FALSE;
@@ -352,8 +349,8 @@ static void eval_eq_ne_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Val
 }
 // TODO: 补充c语言溢出不报错
 static void eval_binary_int_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
-    // DBG_assert(left->type==ZAL_INT_VALUE);
-    // DBG_assert(right->type==ZAL_INT_VALUE);
+    DBG_assert(left->type==ZAL_INT_VALUE, ("left->type=%s\n", zal_value_type_to_str(left->type)));
+    DBG_assert(right->type==ZAL_INT_VALUE, ("right->type=%s\n", zal_value_type_to_str(right->type)));
     ZAL_Value ret;
     ret.type = ZAL_INT_VALUE;
     int l, r;
@@ -401,14 +398,13 @@ static void eval_binary_int_expr(ZAL_Interpreter *inter, ExpressionType type, ZA
         ret.u.bool_value = (l<=r);
         break;
     default:
-        /* TODO: error */
-        break;
+        DBG_panic(("bad expression type: %d\n", type));
     }
     zal_stack_push(inter, &ret);
 }
 static void eval_binary_double_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
-    // DBG_assert(my_is_digit(left));
-    // DBG_assert(my_is_digit(right));
+    DBG_assert(my_is_digit(left), ("left->type=%s\n", zal_value_type_to_str(left->type)));
+    DBG_assert(my_is_digit(right), ("right->type=%s\n", zal_value_type_to_str(right->type)));
     ZAL_Value ret;
     ret.type = ZAL_DOUBLE_VALUE;
     double l, r;
@@ -458,8 +454,7 @@ static void eval_binary_double_expr(ZAL_Interpreter *inter, ExpressionType type,
         ret.u.bool_value = (l<=r);
         break;
     default:
-        /* TODO: error */
-        break;
+        DBG_panic(("bad expression type: %d\n", type));
     }
     zal_stack_push(inter, &ret);
 }
@@ -468,15 +463,15 @@ static void eval_binary_string_expr(ZAL_Interpreter *inter, ExpressionType type,
         eval_eq_ne_expr(inter, type, left, right);
         return;
     }else if(type==ADD_EXPRESSION){
-        // conver
-        // TODO: 字符串连接
+        ZAL_Value ret = chain_string(inter, left, right);
+        zal_stack_push(inter, &ret);
     }else{
-        /* TODO: error: string操作符错误 */
+        zal_runtime_error(inter->line_number, NOT_STRING_OPERATOR_ERR, zal_operator_to_str(type));
     }
 }
 static void eval_binary_array_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
-    // DBG_assert(left->type==ZAL_ARRAY_VALUE);
-    // DBG_assert(right->type==ZAL_ARRAY_VALUE);
+    DBG_assert(left->type==ZAL_ARRAY_VALUE, ("left->type=%s\n", zal_value_type_to_str(left->type)));
+    DBG_assert(right->type==ZAL_ARRAY_VALUE, ("right->type=%s\n", zal_value_type_to_str(right->type)));
     if(type==NE_EXPRESSION || type==EQ_EXPRESSION){
         eval_eq_ne_expr(inter, type, left, right);
         return;
@@ -510,15 +505,15 @@ static void call_zal_func(ZAL_Interpreter *inter, ZAL_LocalEnvironment *caller_e
     ParameterList *para=func->u.zal_f.para;
     ArgumentList *argv_expr=expr->u.func_call_expr.argv;
     for(; argv_expr; argv_expr=argv_expr->next, para=para->next){
-        if(!para){
-            // zal_runtime_error();  // TODO: 实参过多
+        if(!para){  // 实参过多
+            zal_runtime_error(inter->line_number, ARGUMENT_TOO_MANY_ERR);
         }
         VariableList *var=zal_add_local_variable(called_env, para->name);
         eval_expr(inter, caller_env, argv_expr->argv);
         var->value = zal_stack_pop(inter);
     }
-    if(para){
-        // zal_runtime_error();  // TODO: 实参过少
+    if(para){   // 实参过少
+        zal_runtime_error(inter->line_number, ARGUMENT_TOO_FEW_ERR);  
     }
     result = zal_exe_stat_list(inter, called_env, func->u.zal_f.block->state_list);
     if(result.type == RETURN_STAT_RESULT){
@@ -582,8 +577,8 @@ static void covert_bool_to_int(ZAL_Value *value){
 }
 
 static ZAL_Boolean compare_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right){
-    // DBG_assert(left->type==ZAL_ARRAY_VALUE);
-    // DBG_assert(right->type==ZAL_ARRAY_VALUE);
+    DBG_assert(left->type==ZAL_ARRAY_VALUE, ("left->type=%s\n", zal_value_type_to_str(left->type)));
+    DBG_assert(right->type==ZAL_ARRAY_VALUE, ("right->type=%s\n", zal_value_type_to_str(right->type)));
     ZAL_Array *l = &left->u.object->u.array;
     ZAL_Array *r = &right->u.object->u.array;
     if(l==r) return ZAL_TRUE;
@@ -597,4 +592,18 @@ static ZAL_Boolean compare_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Va
         }
         return ZAL_TRUE;
     }
+}
+
+ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right){
+    char *left_str=zal_value_to_str(left);
+    char *right_str=zal_value_to_str(right);
+    char *str=NULL;
+    ZAL_Value ret;
+    int len=strlen(left_str)+strlen(right_str)+1;
+    str = MEM_alloc(len);
+    strcpy(str, left_str);
+    strcat(str, right_str);
+    ret.type=ZAL_STRING_VALUE;
+    ret.u.object=zal_non_literal_to_string(inter, str);
+    return ret;
 }
