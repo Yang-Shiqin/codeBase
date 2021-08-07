@@ -1,4 +1,11 @@
 #include "zal_in.h"
+#include <stddef.h>
+#include <stdlib.h>
+
+// 注册内置函数
+void add_native_func(ZAL_Interpreter *inter){
+    ZAL_add_native_function(inter, "print", zal_nv_print);
+}
 
 ZAL_Interpreter *ZAL_create_interpreter(void){
     MEM_Storage *stor;
@@ -15,10 +22,11 @@ ZAL_Interpreter *ZAL_create_interpreter(void){
     inter->stack.top = 0;
     inter->stack.stack = MEM_alloc(sizeof(ZAL_Value)*STACK_ALLOC_SIZE);
     inter->heap.size = 0;
-    inter->heap.pointer = 0;
+    inter->heap.threshold = HEAP_THRESHOLD;
     inter->heap.heap = NULL;
-
+    inter->last_env = NULL;
     zal_set_current_inter(inter);
+    add_native_func(inter);
     return inter;
 }
 
@@ -37,6 +45,7 @@ void ZAL_compile(ZAL_Interpreter *inter, FILE *fp){
 void ZAL_interpret(ZAL_Interpreter *inter){
     inter->exe_storage = MEM_open_storage(0);
     // TODO
+    zal_add_std_fp(inter);
     zal_exe_stat_list(inter, NULL, inter->state_list);
 
 }
@@ -46,4 +55,13 @@ void ZAL_destroy_interpreter(ZAL_Interpreter *inter){
     // TODO
     MEM_free(inter->stack.stack);
     MEM_close_storage(inter->inter_storage);
+}
+
+void ZAL_add_native_function(ZAL_Interpreter *inter, char *identifier, ZAL_NativeFuncProc func){
+    FuncDefList *func_node = zal_alloc(sizeof(FuncDefList));
+    func_node->name = identifier;
+    func_node->type = NATIVE_FUNC_DEF;
+    func_node->u.native_f.proc = func;
+    func_node->next = inter->func_list;
+    inter->func_list = func_node;
 }

@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "zal_in.h"
 #include "y.tab.h"
 
@@ -40,6 +41,7 @@ static void increase_line_number(void){
 <INITIAL>"||"           return LOGIC_OR;
 <INITIAL>"="            return ASSIGN;
 <INITIAL>"=="           return EQ;
+<INITIAL>"!="           return NE;
 <INITIAL>">="           return GE;
 <INITIAL>"<="           return LE;
 <INITIAL>">"            return GT;
@@ -59,14 +61,14 @@ static void increase_line_number(void){
 }
 <INITIAL>([0-9]+)|"0" {
     Expression *expr = zal_alloc_expr(INT_EXPRESSION);
-    sscanf(yytext, "%d", &expr->u.int_value);
-    yylval.exprssion = expr;
+    sscanf(yytext, "%d", &(expr->u.int_expr));
+    yylval.expr = expr;
     return INT_LITERAL;
 }
 <INITIAL>([0-9]*\.[0-9]+)|([0-9]+\.[0-9]*) {
     Expression *expr = zal_alloc_expr(DOUBLE_EXPRESSION);
-    sscanf(yytext, "%lf", &expr->u.double_value);
-    yylval.exprssion = expr;
+    sscanf(yytext, "%lf", &(expr->u.double_expr));
+    yylval.expr = expr;
     return DOUBLE_LITERAL;
 }
 <INITIAL>\" {
@@ -91,7 +93,7 @@ static void increase_line_number(void){
         sprintf(buf, "0x%02x", (unsigned char)yytext[0]);
     }
 
-    zal_compile_error(CHARACTER_INVALID_ERR/*TODO*/);
+    // zal_compile_error(CHARACTER_INVALID_ERR/*TODO*/);
 }
 
 <COMMENT>\n {

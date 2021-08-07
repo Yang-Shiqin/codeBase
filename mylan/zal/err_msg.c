@@ -1,14 +1,14 @@
+#include "zal_in.h"
 
-
-MessageFormat zal_compile_error_msg_format[] = {
+ErrorMsgFormat zal_compile_error_msg_format[] = {
     {"dummy"},
     {"($(token))附近有语法错误"},
     {"错误的字符($(bad_char))"},
     {"函数名重复($(name))"},
     {"dummy"}
-}
+};
 
-MessageFormat zal_runtime_error_msg_format[] = {
+ErrorMsgFormat zal_runtime_error_msg_format[] = {
     {"dummy"},
     {"未找到变量$(name)"},      // 可以去掉
     {"未找到函数$(name)"},

@@ -47,6 +47,7 @@ static StatementResult exe_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironment *en
         break;
     default:
         /* TODO: error */
+        break;
     }
     return result;
 }
@@ -57,11 +58,11 @@ static StatementResult exe_if_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironment 
     int flag;
     condition = zal_eval_expr(inter, env, stat->u.if_s.condition);
     if(zal_is_true(&condition)){
-        result = zal_exe_stat_list(stat->u.if_s.then_block->state_list);
+        result = zal_exe_stat_list(inter, env, stat->u.if_s.then_block->state_list);
     }else{
         result = exe_elif_stat(inter, env, stat->u.if_s.elif, &flag);
         if(!flag)
-            result = zal_exe_stat_list(stat->u.if_s.else_block->state_list);
+            result = zal_exe_stat_list(inter, env, stat->u.if_s.else_block->state_list);
     }
     return result;
 }
@@ -90,7 +91,7 @@ static StatementResult exe_for_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironment
     for(; zal_is_true(&condition);
             zal_eval_expr(inter, env, stat->u.for_s.post))
     {
-        result = zal_exe_stat_list(stat->u.for_s.block->state_list);
+        result = zal_exe_stat_list(inter, env, stat->u.for_s.block->state_list);
         condition = zal_eval_expr(inter, env, stat->u.for_s.condition);
         if(result.type == RETURN_STAT_RESULT) break;
         if(result.type == BREAK_STAT_RESULT){
@@ -111,7 +112,7 @@ static StatementResult exe_while_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironme
     condition = zal_eval_expr(inter, env, stat->u.while_s.condition);
     while(zal_is_true(&condition))
     {
-        result = zal_exe_stat_list(stat->u.while_s.block->state_list);
+        result = zal_exe_stat_list(inter, env, stat->u.while_s.block->state_list);
         condition = zal_eval_expr(inter, env, stat->u.while_s.condition);
         if(result.type == RETURN_STAT_RESULT) break;
         if(result.type == BREAK_STAT_RESULT){
@@ -120,7 +121,7 @@ static StatementResult exe_while_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironme
         }
         if(result.type == CONTINUE_STAT_RESULT){
             result.type = NORMAL_STAT_RESULT;   // 与for相消
-            condition;
+            continue;
         }
     }
     return result;
@@ -141,6 +142,6 @@ static StatementResult exe_continue_stat(){
 static StatementResult exe_return_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Statement *stat){
     StatementResult result;
     result.type = RETURN_STAT;
-    result.u.result_v = zal_eval_expr(inter, env, stat->return_s.result);
+    result.u.result_v = zal_eval_expr(inter, env, stat->u.return_s.result);
     return result;
 }

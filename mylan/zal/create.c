@@ -58,7 +58,7 @@ Expression* zal_create_binary_expr(ExpressionType operator, Expression *left, Ex
     if(my_is_digit(left) && my_is_digit(right)){
         ZAL_Interpreter *inter = zal_get_current_inter();
         ZAL_Value value = zal_eval_binary_expr(inter, NULL, operator, left, right);
-        *left = convert_value_to_expression(value, left->line_number);
+        *left = convert_value_to_expression(&value, left->line_number);
         /*要free right吗*/
         return left;
     }
@@ -72,18 +72,18 @@ Expression* zal_create_minus_expr(Expression *expr){
     if(my_is_digit(expr)){
         ZAL_Interpreter *inter = zal_get_current_inter();
         ZAL_Value value = zal_eval_minus_expr(inter, NULL, expr);
-        *expr = convert_value_to_expression(value, expr->line_number);
+        *expr = convert_value_to_expression(&value, expr->line_number);
         return expr;
     }
-    Expression *expr = zal_alloc_expr(MINUS_EXPRESSION);
-    expr->u.minus_expr = expr;
-    return expr;
+    Expression *minus_expr = zal_alloc_expr(MINUS_EXPRESSION);
+    minus_expr->u.minus_expr = expr;
+    return minus_expr;
 }
 
 Expression* zal_create_inc_dec_expr(Expression *expr, ExpressionType type){
-    Expression *expr = zal_alloc_expr(type);
-    expr->u.inc_dec_expr = expr;
-    return expr;
+    Expression *inc_dec_expr = zal_alloc_expr(type);
+    inc_dec_expr->u.inc_dec_expr = expr;
+    return inc_dec_expr;
 }
 
 Expression* zal_create_func_call_expr(char *identifier, ArgumentList *argv){
@@ -94,11 +94,11 @@ Expression* zal_create_func_call_expr(char *identifier, ArgumentList *argv){
 }
 
 Expression* zal_create_method_call_expr(Expression *expr, char *identifier, ArgumentList *argv){
-    Expression *expr = zal_alloc_expr(METHOD_CALL_EXPRESSION);
-    expr->u.method_call_expr.expr = expr;
-    expr->u.method_call_expr.identifier = identifier;
-    expr->u.method_call_expr.argv = argv;
-    return expr;
+    Expression *m_call_expr = zal_alloc_expr(METHOD_CALL_EXPRESSION);
+    m_call_expr->u.method_call_expr.expr = expr;
+    m_call_expr->u.method_call_expr.identifier = identifier;
+    m_call_expr->u.method_call_expr.argv = argv;
+    return m_call_expr;
 }
 
 // 创建字面数组
@@ -110,8 +110,8 @@ Expression* zal_create_array_expr(ExpressionList *elem_list){
 
 Expression* zal_create_index_expr(Expression *array, Expression *index){
     Expression *idx = zal_alloc_expr(INDEX_EXPRESSION);
-    idx->u.array = array;
-    idx->u.index = index;
+    idx->u.index_expr.array = array;
+    idx->u.index_expr.index = index;
     return idx;
 }
 
@@ -191,10 +191,10 @@ Statement* zal_create_expr_statement(Expression* expr){
 
 Statement* zal_create_if_statement(Expression *condition, Block *then_block, Elif *elif, Block *else_block){
     Statement* stat = zal_alloc_stat(IF_STAT);
-    stat->u.if_s->condition = condition;
-    stat->u.if_s->then_block = then_block;
-    stat->u.if_s->elif = elif;
-    stat->u.if_s->else_block = else_block;
+    stat->u.if_s.condition = condition;
+    stat->u.if_s.then_block = then_block;
+    stat->u.if_s.elif = elif;
+    stat->u.if_s.else_block = else_block;
     return stat;
 }
 
@@ -219,23 +219,23 @@ Elif* zal_add_elif_to_list(Elif *elif, Expression *condition, Block *block){
 
 Statement* zal_create_for_statement(Expression *init, Expression *condition, Expression *post, Block *block){
     Statement* stat = zal_alloc_stat(FOR_STAT);
-    stat->u.for_s->init = init;
-    stat->u.for_s->condition = condition;
-    stat->u.for_s->post = post;
-    stat->u.for_s->block = block;
+    stat->u.for_s.init = init;
+    stat->u.for_s.condition = condition;
+    stat->u.for_s.post = post;
+    stat->u.for_s.block = block;
     return stat;
 }
 
 Statement* zal_create_while_statement(Expression *condition, Block *block){
     Statement* stat = zal_alloc_stat(WHILE_STAT);
-    stat->u.while_s->condition = condition;
-    stat->u.while_s->block = block;
+    stat->u.while_s.condition = condition;
+    stat->u.while_s.block = block;
     return stat;
 }
 
 Statement* zal_create_return_statement(Expression *result){
     Statement* stat = zal_alloc_stat(RETURN_STAT);
-    stat->u.return_s->result = result;
+    stat->u.return_s.result = result;
     return stat;
 }
 
@@ -268,7 +268,6 @@ StatementList* zal_add_statement_to_list(StatementList* state_list, Statement* s
 }
 
 
-
 /*************************** 代码块 ********************************/
 Block* zal_create_block(StatementList* state_list){
     Block *block = zal_alloc(sizeof(Block));
@@ -281,8 +280,8 @@ void zal_inter_create_function(char* identifier, ParameterList *para, Block *blo
     FuncDefList *func = zal_alloc(sizeof(FuncDefList));
     func->name = identifier;
     func->type = ZAL_FUNC_DEF;
-    func->u.zal_f->para = para;
-    func->u.zal_f->block = block;
+    func->u.zal_f.para = para;
+    func->u.zal_f.block = block;
     ZAL_Interpreter *inter = zal_get_current_inter();
     if(inter->func_list==NULL){
         inter->func_list = func;

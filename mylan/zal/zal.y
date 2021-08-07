@@ -1,6 +1,12 @@
 %{
 #include <stdio.h>
 #include "zal_in.h"
+extern int yylex();
+int
+yyerror(char const *str)
+{    return 0;
+}
+
 #define YYDEBUG 1
 %}
 %union {
@@ -12,7 +18,7 @@
     Statement       *state;
     StatementList   *state_list;
     Block           *block;
-    Elsif           *elsif;
+    Elif           *elif;
 }
 %token <expr>       INT_LITERAL
 %token <expr>       DOUBLE_LITERAL
@@ -20,7 +26,7 @@
 %token <identifier> IDENTIFIER
 %token FUNCTION IF ELIF ELSE WHILE FOR RETURN CONTINUE BREAK NULL_T 
         TRUE_T FALSE_T LP RP LC RC LB RB SEMICOLON COMMA LOGIC_AND 
-        LOGIC_OR ASSIGN EQ GE LE GT LT ADD SUB MUL DIV MOD INC DEC DOT
+        LOGIC_OR ASSIGN EQ NE GE LE GT LT ADD SUB MUL DIV MOD INC DEC DOT
 
 %type <para_list>   para_list
 %type <argv_list>   argv_list
@@ -32,7 +38,7 @@
         break_state continue_state
 %type <state_list>  state_list
 %type <block>       block
-%type <elsif>       elsif
+%type <elif>       elif
 
 %%
 
@@ -46,23 +52,23 @@ func_def_or_state
     | state
     {
         ZAL_Interpreter* inter = zal_get_current_inter();
-        zal_add_statement_to_list(inter->state_list, $1);
+        inter->state_list = zal_add_statement_to_list(inter->state_list, $1);
     }
     ;
 
 func_def
     : FUNCTION IDENTIFIER LP para_list RP block
     {
-        zal_inter_create_func($2, $4, $6);
+        zal_inter_create_function($2, $4, $6);
     }
 	| FUNCTION IDENTIFIER LP RP block
     {
-        zal_inter_create_func($2, NULL, $5);
+        zal_inter_create_function($2, NULL, $5);
     }
     ;
 
 state
-    : expr_list SEMICOLON
+    : expr SEMICOLON
     {
         $$ = zal_create_expr_statement($1);
     }
@@ -116,7 +122,7 @@ if_state
     {
         $$ = zal_create_if_statement($3, $5, NULL, NULL);
     }
-	| IF LP condition RP block elsif
+	| IF LP condition RP block elif
     {
         $$ = zal_create_if_statement($3, $5, $6, NULL);
     }
@@ -124,14 +130,14 @@ if_state
     {
         $$ = zal_create_if_statement($3, $5, NULL, $7);
     }
-    | IF LP condition RP block elsif ELSE block
+    | IF LP condition RP block elif ELSE block
     {
         $$ = zal_create_if_statement($3, $5, $6, $8);
     }
     ;
 
 for_state
-    : FOR LP expr_list SEMICOLON condition SEMICOLON expr_list RP block
+    : FOR LP expr SEMICOLON condition SEMICOLON expr RP block
     {
         $$ = zal_create_for_statement($3, $5, $7, $9);
     }
@@ -195,12 +201,12 @@ condition
     }
     ;
 
-elsif
+elif
     : ELIF LP condition RP block
     {
         $$ = zal_create_elif($3, $5);
     }
-	| elsif ELIF LP condition RP block
+	| elif ELIF LP condition RP block
     {
         $$ = zal_add_elif_to_list($1, $4, $6);
     }
@@ -208,6 +214,9 @@ elsif
 
 l_expr
     : IDENTIFIER
+    {
+        $$ = zal_create_identifier_expr($1);
+    }
 	| l_expr LB expr RB
     {
         $$ = zal_create_index_expr($1, $3);
@@ -275,16 +284,16 @@ add_sub_expr
     ;
 
 math_expr
-	: minus_in_de_expr
-	| math_expr MUL minus_in_de_expr
+	: minus_expr
+	| math_expr MUL minus_expr
     {
         $$ = zal_create_binary_expr(MUL_EXPRESSION, $1, $3);
     }
-	| math_expr DIV minus_in_de_expr
+	| math_expr DIV minus_expr
     {
         $$ = zal_create_binary_expr(DIV_EXPRESSION, $1, $3);
     }
-	| math_expr MOD minus_in_de_expr
+	| math_expr MOD minus_expr
     {
         $$ = zal_create_binary_expr(MOD_EXPRESSION, $1, $3);
     }
@@ -294,7 +303,7 @@ minus_expr
     : in_de_expr
 	| SUB pri_expr
     {
-        $$ = zal_create_minus_expr(NE_EXPRESSION, $1, $3);
+        $$ = zal_create_minus_expr($2);
     }
     ;
 
@@ -333,7 +342,7 @@ pri_expr
     }
 	| LP expr RP
     {
-        $$ = $2
+        $$ = $2;
     }
 	| IDENTIFIER
     {
@@ -354,11 +363,11 @@ pri_expr
     ;
 
 array_literal
-    : LC argv_list RC
+    : LC expr_list RC
     {
         $$ = zal_create_array_expr($2);
     }
-	| LC argv_list COMMA RC
+	| LC expr_list COMMA RC
     {
         $$ = zal_create_array_expr($2);
     }

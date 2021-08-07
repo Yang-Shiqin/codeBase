@@ -1,18 +1,20 @@
 #include "memory.h"
 #include <stdlib.h>
 
+static void default_error_handler(MEM_Controller *ctrl, char *file, int line, char *msg);
+
 static MEM_Controller s_default_mem_controller = {
-    NULL; // stderr
-    default_error_handler;
+    NULL, // stderr
+    default_error_handler,
     MEM_FAIL_EXIT
 };
 
 MEM_Controller* mem_default_controller = &s_default_mem_controller;
 
-
 static void default_error_handler(MEM_Controller *ctrl, char *file, int line, char *msg){
     fprintf(ctrl->err_out_fp, "MEM:%s failed in %s at line:%d\n", msg, file, line);
 }
+
 
 static void error_handler(MEM_Controller *ctrl, char *file, int line, char *msg){
     if(ctrl->err_out_fp==NULL){
