@@ -260,7 +260,7 @@ char *zal_value_type_to_str(ZAL_ValueType type){
         str = "ZAL_NULL_VALUE";
         break;
     default:
-        DBG_panic(("bad value type: %s\n", zal_value_type_to_str(type)));
+        DBG_panic(("bad value type: %d\n", type));
     }
     return str;
 }

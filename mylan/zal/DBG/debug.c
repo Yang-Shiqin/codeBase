@@ -60,6 +60,8 @@ void DBG_assert_func(char *format, ...){
 void DBG_panic_func(char *format, ...){
     va_list ap;
     va_start(ap, format);
+    fprintf(s_current_dbg_controller->err_out_fp, "file: %s, line: %d.", \
+        s_current_dbg_file, s_current_dbg_line);
     if (format){
         vfprintf(s_current_dbg_controller->err_out_fp, format, ap);
     }
