@@ -6,6 +6,7 @@
 
 #define LINE_BUF_SIZE       (1024)
 #define STACK_ALLOC_SIZE    (256)
+#define ARRAY_ALLOC_SIZE    (128)
 #define HEAP_THRESHOLD      (1024*256)  // 堆gc阈值
 
 typedef enum{
@@ -84,6 +85,8 @@ typedef enum{
 
 typedef enum{
     FUNCTION_NOT_FOUND_ERR = 1,
+    OBJ_METHOD_ERR,
+    NOT_OBJ_ERR,
     ARGUMENT_TOO_MANY_ERR,
     ARGUMENT_TOO_FEW_ERR,
     NOT_ARRAY_OPERATOR_ERR,
@@ -92,8 +95,8 @@ typedef enum{
     FOPEN_ARG_TYPE_ERR,
     FCLOSE_ARG_TYPE_ERR,
     FGETS_ARG_TYPE_ERR,
+    FGET_LINE_ARG_TYPE_ERR,
     FPUTS_ARG_TYPE_ERR,
-    NOT_NULL_OPERATOR_ERR,
     DIVISION_BY_ZERO_ERR,
     NOT_STRING_OPERATOR_ERR,
     NOT_LVALUE_ERR,
@@ -230,9 +233,14 @@ struct ParameterList_tag{
     ParameterList   *next;
 };
 
+typedef struct ObjList_tag{
+    ZAL_Object          *obj;
+    struct ObjList_tag  *next;
+}ObjList;
 
 struct ZAL_LocalEnvironment_tag{
     VariableList            *local_variable;
+    ObjList                 *ref_in_native_func_obj;
     ZAL_LocalEnvironment    *next;
 };
 
@@ -386,10 +394,14 @@ struct Heap_tag{
 
 ZAL_Object* zal_literal_to_string(ZAL_Interpreter *inter, char *str);
 ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str);
+ZAL_Object* zal_env_non_literal_to_string(ZAL_Interpreter *inter, ZAL_LocalEnvironment* env, char *str);
 ZAL_Object* zal_create_array_obj(ZAL_Interpreter *inter, int size);
-
+ZAL_Object* zal_env_create_array_obj(ZAL_Interpreter *inter, ZAL_LocalEnvironment* env, int size);
 
 void zal_mark_sweep_gc(ZAL_Interpreter* inter);
+
+void zal_array_add(ZAL_Interpreter *inter, ZAL_Object *obj, ZAL_Value *to_be_add);
+void zal_array_resize(ZAL_Interpreter *inter, ZAL_Object *obj, int resize);
 
 /************ create.c(给语法解析器用) ***************/
 Expression* zal_alloc_expr(ExpressionType type);
@@ -475,13 +487,13 @@ void ZAL_add_native_function(ZAL_Interpreter *inter, char *identifier, ZAL_Nativ
 
 /************ native.c ***************/    // TODO
 // ZAL_NativeFuncProc的函数形式
-ZAL_Value zal_nv_print  (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
-ZAL_Value zal_nv_scan   (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
-ZAL_Value zal_nv_fopen  (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
-ZAL_Value zal_nv_fclose (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
-ZAL_Value zal_nv_fgets  (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
-ZAL_Value zal_nv_fputs  (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
-ZAL_Value zal_nv_array  (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
+ZAL_Value zal_nv_print      (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
+ZAL_Value zal_nv_fopen      (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
+ZAL_Value zal_nv_fclose     (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
+ZAL_Value zal_nv_fgets      (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
+ZAL_Value zal_nv_fget_line  (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
+ZAL_Value zal_nv_fputs      (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
+ZAL_Value zal_nv_array      (ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv);
 void zal_add_std_fp(ZAL_Interpreter* inter);
 
 /************ error.c ***************/    // TODO

@@ -13,4 +13,6 @@ print(c);
 c=3;
 print('\n'+c);
 d = {1,2,"dsds",3}+{4,5};
+d.resize(10);
 print('\n'+d);
+

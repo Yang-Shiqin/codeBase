@@ -5,12 +5,14 @@
 
 
 ZAL_Object* alloc_obj(ZAL_Interpreter *inter, ObjectType type);
+static void add_ref_in_native_func(ZAL_LocalEnvironment* env, ZAL_Object *obj);
 
 static void check_gc(ZAL_Interpreter *inter);
 static void gc_mark_obj(ZAL_Interpreter *inter);
 static void gc_sweep_obj(ZAL_Interpreter *inter);
 static void gc_reset_mark(ZAL_Object *obj);
 static void gc_mark(ZAL_Object *obj);
+static void gc_mark_ref_in_native_obj(ZAL_LocalEnvironment *env);
 static void gc_free_obj(ZAL_Interpreter *inter, ZAL_Object *obj);
 
 /*********************************** 定义区 *******************************************/
@@ -30,6 +32,12 @@ ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str){
     return str_obj;
 }
 
+ZAL_Object* zal_env_non_literal_to_string(ZAL_Interpreter *inter, ZAL_LocalEnvironment* env, char *str){
+    ZAL_Object* ret = zal_non_literal_to_string(inter, str);
+    add_ref_in_native_func(env, ret);
+    return ret;
+}
+
 ZAL_Object* zal_create_array_obj(ZAL_Interpreter *inter, int size){
     ZAL_Object *ret = alloc_obj(inter, ARRAY_OBJ);
     ret->u.array.alloc_size = size;
@@ -39,6 +47,11 @@ ZAL_Object* zal_create_array_obj(ZAL_Interpreter *inter, int size){
     return ret;
 }
 
+ZAL_Object* zal_env_create_array_obj(ZAL_Interpreter *inter, ZAL_LocalEnvironment* env, int size){
+    ZAL_Object* ret = zal_create_array_obj(inter, size);
+    add_ref_in_native_func(env, ret);
+    return ret;
+}
 
 void zal_mark_sweep_gc(ZAL_Interpreter* inter){
     gc_mark_obj(inter);
@@ -59,6 +72,13 @@ ZAL_Object* alloc_obj(ZAL_Interpreter *inter, ObjectType type){
     return obj;
 }
 
+// obj加入到env防止gc清除
+static void add_ref_in_native_func(ZAL_LocalEnvironment* env, ZAL_Object *obj){
+    ObjList *obj_list = MEM_alloc(sizeof(ObjList));
+    obj_list->obj = obj;
+    obj_list->next = env->ref_in_native_func_obj;
+    env->ref_in_native_func_obj = obj_list;
+}
 
 static void check_gc(ZAL_Interpreter *inter){
     if(inter->heap.size > inter->heap.threshold){
@@ -91,7 +111,7 @@ static void gc_mark_obj(ZAL_Interpreter *inter){
                 gc_mark(var_pos->value.u.object);
             }
         }
-        // TODO: 内置函数的对象
+        gc_mark_ref_in_native_obj(local_env_pos);
     }
     // 栈
     for(; stack_pos<inter->stack.top; stack_pos++){
@@ -138,6 +158,12 @@ static void gc_mark(ZAL_Object *obj){
         }
     }
 }
+static void gc_mark_ref_in_native_obj(ZAL_LocalEnvironment *env){
+    ObjList *pos = env->ref_in_native_func_obj;
+    for(; pos; pos=pos->next){
+        gc_mark(pos->obj);
+    }
+}
 static void gc_free_obj(ZAL_Interpreter *inter, ZAL_Object *obj){
     if(obj->type==ARRAY_OBJ){
         inter->heap.size -= sizeof(ZAL_Value)*(obj->u.array.alloc_size);
@@ -151,4 +177,35 @@ static void gc_free_obj(ZAL_Interpreter *inter, ZAL_Object *obj){
     }
     inter->heap.size -= sizeof(ZAL_Object);
     MEM_free(obj);
+}
+
+
+/*************** method func ***************/
+#define larger(a, b) (((a)>(b))?(a):(b))
+
+void zal_array_add(ZAL_Interpreter *inter, ZAL_Object *obj, ZAL_Value *to_be_add){
+    if(obj->u.array.alloc_size<obj->u.array.size+1){
+        check_gc(inter);
+        int size = obj->u.array.alloc_size+ARRAY_ALLOC_SIZE;
+        obj->u.array.alloc_size = size;
+        obj->u.array.array = MEM_realloc(obj->u.array.array, size*sizeof(ZAL_Value));
+        inter->heap.size += ARRAY_ALLOC_SIZE;
+    }
+    obj->u.array.array[(obj->u.array.size)++] = *to_be_add;
+}
+
+void zal_array_resize(ZAL_Interpreter *inter, ZAL_Object *obj, int resize){
+    int old_size = obj->u.array.alloc_size;
+    int new_size, i;
+    if(resize>old_size){
+        check_gc(inter);
+        new_size = larger(resize, old_size+ARRAY_ALLOC_SIZE);
+        inter->heap.size += new_size-old_size;
+        obj->u.array.array = MEM_realloc(obj->u.array.array, new_size*sizeof(ZAL_Value));
+        obj->u.array.alloc_size = new_size;
+    }
+    for(i=obj->u.array.size; i<resize; i++){
+        obj->u.array.array[i].type = ZAL_NULL_VALUE;
+    }
+    obj->u.array.size = resize;
 }

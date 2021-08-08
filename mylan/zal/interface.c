@@ -5,6 +5,12 @@
 // 注册内置函数
 void add_native_func(ZAL_Interpreter *inter){
     ZAL_add_native_function(inter, "print", zal_nv_print);
+    ZAL_add_native_function(inter, "fopen", zal_nv_fopen);
+    ZAL_add_native_function(inter, "fclose", zal_nv_fclose);
+    ZAL_add_native_function(inter, "fgets", zal_nv_fgets);
+    ZAL_add_native_function(inter, "fget_line", zal_nv_fget_line);
+    ZAL_add_native_function(inter, "fputs", zal_nv_fputs);
+    ZAL_add_native_function(inter, "fget_line", zal_nv_fget_line);
 }
 
 ZAL_Interpreter *ZAL_create_interpreter(void){

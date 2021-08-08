@@ -38,6 +38,9 @@ static ZAL_Boolean compare_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Va
 static ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right);
 static ZAL_Value *get_array_element(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static void chain_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right);
+static void eval_array_method(int line, ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, MethodCallExpression *expr);
+static void eval_string_method(int line, ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, MethodCallExpression *expr);
+static void check_argc(ArgumentList *argv, int should_be);
 
 /*********************************** 定义区 *******************************************/
 ZAL_Value zal_eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right){
@@ -286,7 +289,6 @@ static void eval_inc_dec_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env,
     zal_stack_push(inter, ret);
 }
 
-
 static void eval_func_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
     FuncDefList *func = zal_search_function(expr->u.func_call_expr.identifier);
     ZAL_LocalEnvironment *sub_env = alloc_local_env(inter);
@@ -302,9 +304,18 @@ static void eval_func_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *en
     destroy_local_env(inter);
 }
 
-/* TODO */
 static void eval_method_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
     ZAL_Value ret;
+    ZAL_Value left;
+    eval_expr(inter, env, expr->u.method_call_expr.expr);
+    left = zal_stack_pop(inter);
+    if(left.type==ZAL_ARRAY_VALUE){
+        eval_array_method(expr->line_number, inter, env, &expr->u.method_call_expr);
+    }else if(left.type==ZAL_STRING_VALUE){
+        eval_string_method(expr->line_number, inter, env, &expr->u.method_call_expr);
+    }else{
+        zal_runtime_error(expr->line_number, NOT_OBJ_ERR);
+    }
     zal_stack_push(inter, &ret);
 }
 
@@ -499,8 +510,17 @@ static ZAL_LocalEnvironment *alloc_local_env(ZAL_Interpreter *inter){
     return ret;
 }
 static void destroy_local_env(ZAL_Interpreter *inter){
-    // TODO: free其他引用, 有对象的时候
     ZAL_LocalEnvironment *env=inter->last_env;
+    while (env->local_variable){
+        VariableList *pos=env->local_variable;
+        env->local_variable = pos->next;
+        MEM_free(pos);
+    }
+    while (env->ref_in_native_func_obj){
+        ObjList *pos=env->ref_in_native_func_obj;
+        env->ref_in_native_func_obj = pos->next;
+        MEM_free(pos);
+    }
     inter->last_env = inter->last_env->next;
     MEM_free(env);
 }
@@ -609,6 +629,8 @@ static ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value
     strcat(str, right_str);
     ret.type=ZAL_STRING_VALUE;
     ret.u.object=zal_non_literal_to_string(inter, str);
+    MEM_free(left_str);
+    MEM_free(right_str);
     return ret;
 }
 
@@ -635,7 +657,6 @@ static void chain_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *righ
     DBG_assert(left->type==ZAL_ARRAY_VALUE, (NULL));
     DBG_assert(right->type==ZAL_ARRAY_VALUE, (NULL));
     ZAL_Value ret;
-    int i, j;
     int size=left->u.object->u.array.size+right->u.object->u.array.size;
     ret.type = ZAL_ARRAY_VALUE;
     ret.u.object = zal_create_array_obj(inter, size);
@@ -645,4 +666,60 @@ static void chain_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *righ
             sizeof(ZAL_Value)*(right->u.object->u.array.size));
     ret.u.object->u.array.size = size;
     zal_stack_push(inter, &ret);
+}
+
+static void eval_array_method(int line, ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, MethodCallExpression *expr){
+    ZAL_Value ret;
+    ZAL_Value left;
+    eval_expr(inter, env, expr->expr);
+    left = zal_stack_pop(inter);
+    if(!strcmp(expr->identifier, "add")){
+        check_argc(expr->argv, 1);
+        ZAL_Value to_be_add;
+        eval_expr(inter, env, expr->argv->argv);
+        to_be_add = zal_stack_pop(inter);
+        zal_array_add(inter, left.u.object, &to_be_add);
+        ret.type = ZAL_NULL_VALUE;
+    }else if(!strcmp(expr->identifier, "size")){
+        check_argc(expr->argv, 0);
+        ret.type = ZAL_INT_VALUE;
+        ret.u.int_value = left.u.object->u.array.size;
+    }else if(!strcmp(expr->identifier, "resize")){
+        check_argc(expr->argv, 1);
+        ZAL_Value resize;
+        eval_expr(inter, env, expr->argv->argv);
+        resize = zal_stack_pop(inter);
+        if(resize.type!=ZAL_INT_VALUE){
+            zal_runtime_error(line, RESIZE_ARG_TYPE_ERR);
+        }
+        zal_array_resize(inter, left.u.object, resize.u.int_value);
+        ret.type = ZAL_NULL_VALUE;
+    }else{
+        zal_runtime_error(line, OBJ_METHOD_ERR, expr->identifier);
+    }
+    zal_stack_push(inter, &ret);
+}
+static void eval_string_method(int line, ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, MethodCallExpression *expr){
+    ZAL_Value ret;
+    ZAL_Value left;
+    eval_expr(inter, env, expr->expr);
+    left = zal_stack_pop(inter);
+    if(!strcmp(expr->identifier, "length")){
+        check_argc(expr->argv, 0);
+        ret.type = ZAL_INT_VALUE;
+        ret.u.int_value = strlen(left.u.object->u.string.string);
+    }else{
+        zal_runtime_error(line, OBJ_METHOD_ERR, expr->identifier);
+    }
+    zal_stack_push(inter, &ret);
+}
+static void check_argc(ArgumentList *argv, int should_be){
+    int argc=0;
+    ArgumentList *pos=argv;
+    for(; pos; pos=pos->next, argc++) continue;
+    if(argc<should_be){
+        zal_runtime_error(0, ARGUMENT_TOO_FEW_ERR); // 实参太少
+    }else if(argc>should_be){
+        zal_runtime_error(0, ARGUMENT_TOO_MANY_ERR); // 实参太多
+    }
 }
