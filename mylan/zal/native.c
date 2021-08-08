@@ -5,18 +5,18 @@ static ZAL_NativePointerInfo s_native_lib_info = {
     "zal.lang.file"
 };
 
-static void check_argc(int line, int argc, int should_be){
+static void check_argc(int argc, int should_be){
     if(argc<should_be){
-        zal_runtime_error(line, ARGUMENT_TOO_FEW_ERR); // 实参太少
+        zal_runtime_error(0, ARGUMENT_TOO_FEW_ERR); // 实参太少
     }else if(argc>should_be){
-        zal_runtime_error(line, ARGUMENT_TOO_MANY_ERR); // 实参太多
+        zal_runtime_error(0, ARGUMENT_TOO_MANY_ERR); // 实参太多
     }
 }
 
 ZAL_Value zal_nv_print(ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv){
     ZAL_Value ret;
     char *to_be_printed=NULL;
-    check_argc(inter->line_number, argc, 1);    // print一个zal_value(计算简化后)
+    check_argc(argc, 1);    // print一个zal_value(计算简化后)
     to_be_printed = zal_value_to_str(argv);
     printf("%s", to_be_printed);
     MEM_free(to_be_printed);

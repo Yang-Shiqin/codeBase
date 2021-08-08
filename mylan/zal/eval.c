@@ -10,8 +10,8 @@ static void eval_int_expr(ZAL_Interpreter *inter, int int_expr);
 static void eval_double_expr(ZAL_Interpreter *inter, double double_expr);
 static void eval_null_expr(ZAL_Interpreter *inter);
 static void eval_string_expr(ZAL_Interpreter *inter, char *string_expr);
-static void eval_array_expr(ZAL_Interpreter *inter, ExpressionList *array_liter_expr);
-static void eval_index_expr(ZAL_Interpreter *inter, Expression *array, Expression *index);
+static void eval_array_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionList *array_liter_expr);
+static void eval_index_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static void eval_identifier_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static void eval_assign_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *l_value, Expression *r_value);
 static void eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right);
@@ -21,11 +21,11 @@ static void eval_inc_dec_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env,
 static void eval_func_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static void eval_method_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 
-static void eval_eq_ne_expr         (ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
-static void eval_binary_int_expr    (ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
-static void eval_binary_double_expr (ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
-static void eval_binary_string_expr (ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
-static void eval_binary_array_expr  (ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
+static void eval_eq_ne_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
+static void eval_binary_int_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
+static void eval_binary_double_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
+static void eval_binary_string_expr(int line, ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
+static void eval_binary_array_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right);
 
 static ZAL_LocalEnvironment *alloc_local_env(ZAL_Interpreter *inter);
 static void destroy_local_env(ZAL_Interpreter *inter);
@@ -34,9 +34,9 @@ static void call_native_func(ZAL_Interpreter *inter, ZAL_LocalEnvironment *calle
 
 static void covert_bool_to_int(ZAL_Value *value);
 static ZAL_Value *get_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
-static ZAL_Value *get_array_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static ZAL_Boolean compare_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right);
-ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right);
+static ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right);
+static ZAL_Value *get_array_element(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 
 /*********************************** 定义区 *******************************************/
 ZAL_Value zal_eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right){
@@ -78,10 +78,10 @@ static void eval_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Express
         eval_string_expr(inter, expr->u.string_expr);
         break;
     case ARRAY_EXPRESSION:
-        eval_array_expr(inter, expr->u.array_liter_expr);
+        eval_array_expr(inter, env, expr->u.array_liter_expr);
         break;
     case INDEX_EXPRESSION:
-        eval_index_expr(inter, expr->u.index_expr.array, expr->u.index_expr.index);
+        eval_index_expr(inter, env, expr);
         break;
     case IDENTIFIER_EXPRESSION:
         eval_identifier_expr(inter, env, expr); // 需报错信息, 就传了整个
@@ -157,17 +157,25 @@ static void eval_string_expr(ZAL_Interpreter *inter, char *string_expr){
     zal_stack_push(inter, &ret);
 }
 
-/* TODO */
-static void eval_array_expr(ZAL_Interpreter *inter, ExpressionList *array_liter_expr){
+static void eval_array_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionList *array_liter_expr){
     ZAL_Value ret;
+    ExpressionList *pos=array_liter_expr;
+    int size;
+    for(size=0; pos; pos=pos->next, size++) continue;
     ret.type = ZAL_ARRAY_VALUE;
+    ret.u.object = zal_create_array_obj(inter, size);
+
+    for(size=0, pos=array_liter_expr; pos; pos=pos->next, size++){
+        eval_expr(inter, env, pos->expr);
+        ret.u.object->u.array.array[size] = zal_stack_pop(inter);
+    }
+    ret.u.object->u.array.size=size;
     zal_stack_push(inter, &ret);
 }
 
-/* TODO */
-static void eval_index_expr(ZAL_Interpreter *inter, Expression *array, Expression *index){
-    ZAL_Value ret;
-    zal_stack_push(inter, &ret);
+static void eval_index_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
+    ZAL_Value *ret = get_array_element(inter, env, expr);
+    zal_stack_push(inter, ret);
 }
 static void eval_identifier_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
     VariableList *var=NULL;
@@ -215,7 +223,7 @@ static void eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, 
     }else if(my_is_digit(&l_v)&&(r_v.type==ZAL_DOUBLE_VALUE) || my_is_digit(&r_v)&&(l_v.type==ZAL_DOUBLE_VALUE)){
         eval_binary_double_expr(inter, type, &l_v, &r_v);
     }else if((l_v.type==ZAL_STRING_VALUE) || (r_v.type==ZAL_STRING_VALUE)){
-        eval_binary_string_expr(inter, type, &l_v, &r_v);
+        eval_binary_string_expr(left->line_number, inter, type, &l_v, &r_v);
     }else if((l_v.type==ZAL_ARRAY_VALUE) && (r_v.type==ZAL_ARRAY_VALUE)){
         eval_binary_array_expr(inter, type, &l_v, &r_v);
     }else{
@@ -232,7 +240,7 @@ static void eval_logical_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env,
     r_v = zal_stack_pop(inter);
     l_v = zal_stack_pop(inter);
     if(r_v.type!=ZAL_BOOL_VALUE || r_v.type!=ZAL_BOOL_VALUE){
-        zal_runtime_error(inter->line_number, NOT_BOOL_TYPE_ERR);
+        zal_runtime_error(left->line_number, NOT_BOOL_TYPE_ERR);
     }
     ret.type = ZAL_BOOL_VALUE;
     if(type == LOGICAL_AND_EXPRESSION){
@@ -261,7 +269,7 @@ static void eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, E
         value.u.double_value = -value.u.double_value;
         break;
     default:
-        zal_runtime_error(inter->line_number, MINUS_OPERAND_TYPE_ERR);
+        zal_runtime_error(expr->line_number, MINUS_OPERAND_TYPE_ERR);
     }
     zal_stack_push(inter, &value);
 }
@@ -269,7 +277,7 @@ static void eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, E
 static void eval_inc_dec_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *inc_dec_expr){
     ZAL_Value *ret = get_lvalue(inter, env, inc_dec_expr);
     if(ret->type != ZAL_INT_VALUE){
-        zal_runtime_error(inter->line_number, INC_DEC_OPERAND_TYPE_ERR);
+        zal_runtime_error(inc_dec_expr->line_number, INC_DEC_OPERAND_TYPE_ERR);
     }
     if(type==INCREMENT_EXPRESSION){
         ret->u.int_value++;
@@ -284,7 +292,7 @@ static void eval_func_call_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *en
     FuncDefList *func = zal_search_function(expr->u.func_call_expr.identifier);
     ZAL_LocalEnvironment *sub_env = alloc_local_env(inter);
     if(func==NULL){ // 找不到函数
-        zal_runtime_error(inter->line_number, FUNCTION_NOT_FOUND_ERR, expr->u.func_call_expr.identifier);
+        zal_runtime_error(expr->line_number, FUNCTION_NOT_FOUND_ERR, expr->u.func_call_expr.identifier);
     }
     if(func->type == ZAL_FUNC_DEF){
         call_zal_func(inter, env, sub_env, expr, func);
@@ -458,7 +466,7 @@ static void eval_binary_double_expr(ZAL_Interpreter *inter, ExpressionType type,
     }
     zal_stack_push(inter, &ret);
 }
-static void eval_binary_string_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
+static void eval_binary_string_expr(int line, ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
     if(type==NE_EXPRESSION || type==EQ_EXPRESSION){
         eval_eq_ne_expr(inter, type, left, right);
         return;
@@ -466,7 +474,7 @@ static void eval_binary_string_expr(ZAL_Interpreter *inter, ExpressionType type,
         ZAL_Value ret = chain_string(inter, left, right);
         zal_stack_push(inter, &ret);
     }else{
-        zal_runtime_error(inter->line_number, NOT_STRING_OPERATOR_ERR, zal_operator_to_str(type));
+        zal_runtime_error(line, NOT_STRING_OPERATOR_ERR, zal_operator_to_str(type));
     }
 }
 static void eval_binary_array_expr(ZAL_Interpreter *inter, ExpressionType type, ZAL_Value *left, ZAL_Value *right){
@@ -506,14 +514,14 @@ static void call_zal_func(ZAL_Interpreter *inter, ZAL_LocalEnvironment *caller_e
     ArgumentList *argv_expr=expr->u.func_call_expr.argv;
     for(; argv_expr; argv_expr=argv_expr->next, para=para->next){
         if(!para){  // 实参过多
-            zal_runtime_error(inter->line_number, ARGUMENT_TOO_MANY_ERR);
+            zal_runtime_error(expr->line_number, ARGUMENT_TOO_MANY_ERR);
         }
         VariableList *var=zal_add_local_variable(called_env, para->name);
         eval_expr(inter, caller_env, argv_expr->argv);
         var->value = zal_stack_pop(inter);
     }
     if(para){   // 实参过少
-        zal_runtime_error(inter->line_number, ARGUMENT_TOO_FEW_ERR);  
+        zal_runtime_error(expr->line_number, ARGUMENT_TOO_FEW_ERR);  
     }
     result = zal_exe_stat_list(inter, called_env, func->u.zal_f.block->state_list);
     if(result.type == RETURN_STAT_RESULT){
@@ -540,10 +548,8 @@ static void call_native_func(ZAL_Interpreter *inter, ZAL_LocalEnvironment *calle
 
 /*****************************  *********************************/
 
-/* TODO */
-static ZAL_Value *get_array_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){;}
-
 /* TODO: 函数返回等 */
+// 作为左值是地址
 static ZAL_Value *get_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
     ZAL_Value *ret=NULL;
     if(expr->type == IDENTIFIER_EXPRESSION){
@@ -561,9 +567,9 @@ static ZAL_Value *get_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, 
         }
         ret = &(var->value);
     }else if(expr->type == INDEX_EXPRESSION){
-        // TODO: ret = get_array_lvalue(inter, env, expr);
+        ret = get_array_element(inter, env, expr);
     }else{
-        /* TODO: error */
+        zal_runtime_error(expr->line_number, NOT_LVALUE_ERR);
     }
     return ret;
 }
@@ -594,7 +600,7 @@ static ZAL_Boolean compare_array(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Va
     }
 }
 
-ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right){
+static ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right){
     char *left_str=zal_value_to_str(left);
     char *right_str=zal_value_to_str(right);
     char *str=NULL;
@@ -606,4 +612,23 @@ ZAL_Value chain_string(ZAL_Interpreter *inter, ZAL_Value *left, ZAL_Value *right
     ret.type=ZAL_STRING_VALUE;
     ret.u.object=zal_non_literal_to_string(inter, str);
     return ret;
+}
+
+static ZAL_Value *get_array_element(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
+    ZAL_Value array, index;
+    DBG_assert(expr->type==INDEX_EXPRESSION, ("expr->type=%d", expr->type));
+    eval_expr(inter, env, expr->u.index_expr.array);
+    eval_expr(inter, env, expr->u.index_expr.index);
+    index = zal_stack_pop(inter);
+    array = zal_stack_pop(inter);
+    if(array.type != ZAL_ARRAY_VALUE){
+        zal_runtime_error(expr->line_number, INDEX_OPERAND_NOT_ARRAY_ERR);
+    }
+    if(index.type != ZAL_INT_VALUE){
+        zal_runtime_error(expr->line_number, INDEX_OPERAND_NOT_INT_ERR);
+    }
+    if(index.u.int_value<0 || index.u.int_value>=array.u.object->u.array.size){
+        zal_runtime_error(expr->line_number, ARRAY_INDEX_OUT_OF_BOUNDS_ERR);
+    }
+    return &(array.u.object->u.array.array[index.u.int_value]);
 }

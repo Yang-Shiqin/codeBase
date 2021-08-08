@@ -30,6 +30,16 @@ ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str){
     return str_obj;
 }
 
+ZAL_Object* zal_create_array_obj(ZAL_Interpreter *inter, int size){
+    ZAL_Object *ret = alloc_obj(inter, ARRAY_OBJ);
+    ret->u.array.alloc_size = size;
+    ret->u.array.size = 0;
+    ret->u.array.array=MEM_alloc(sizeof(ZAL_Value)*size);
+    inter->heap.size += sizeof(ZAL_Value)*size;
+    return ret;
+}
+
+
 void zal_mark_sweep_gc(ZAL_Interpreter* inter){
     gc_mark_obj(inter);
     gc_sweep_obj(inter);

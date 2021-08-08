@@ -26,6 +26,9 @@ $(TARGET):$(OBJS)
 	$(CC) $(OBJS) -o $@ -lm
 clean:
 	rm -f *.o lex.yy.c y.tab.c y.tab.h *~
+	rm y.output
+	rm ./DBG/*.o
+	rm ./MEM/*.o
 y.tab.h : zal.y
 	yacc -dv zal.y
 y.tab.c : error.c zal.y

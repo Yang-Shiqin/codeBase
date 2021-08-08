@@ -90,7 +90,7 @@ int zal_is_true(ZAL_Value *value){
         res = 0;
         break;
     default:
-        /* TODO: error */
+        DBG_panic(("bad value type: %s\n", zal_value_type_to_str(value->type)));
         break;
     }
     return res;
@@ -120,7 +120,7 @@ char *zal_value_to_str(ZAL_Value *value){
     VStr v_str={NULL};
     char buf[LINE_BUF_SIZE];
     ZAL_Value *array=NULL;
-    int pos=0;
+    int pos;
     switch (value->type)
     {
     case ZAL_BOOL_VALUE:
@@ -143,11 +143,12 @@ char *zal_value_to_str(ZAL_Value *value){
         break;
     case ZAL_ARRAY_VALUE:
         zal_vstr_append_ch(&v_str, '[');
-        for(array=value->u.object->u.array.array; pos<value->u.object->u.array.size; pos++){
-            char *tmp=zal_value_to_str(array+pos);
+        for(array=value->u.object->u.array.array, pos=0; pos<value->u.object->u.array.size; pos++){
+            if(pos)
+                zal_vstr_append_string(&v_str, ", ");
+            char *tmp=zal_value_to_str(&array[pos]);
             zal_vstr_append_string(&v_str, tmp);
             MEM_free(tmp);
-            zal_vstr_append_string(&v_str, ", ");
         }
         zal_vstr_append_ch(&v_str, ']');
         break;

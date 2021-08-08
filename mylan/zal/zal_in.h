@@ -264,7 +264,7 @@ struct ArgumentList_tag{
 };
 
 struct IndexExpression_tag{
-    Expression      *array;     // 数组元素/数组名(二维数组a[1]/一维数组a) 
+    Expression      *array;     // 数组名
     Expression      *index;     // 数组下标
 };
 
@@ -386,6 +386,8 @@ struct Heap_tag{
 
 ZAL_Object* zal_literal_to_string(ZAL_Interpreter *inter, char *str);
 ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str);
+ZAL_Object* zal_create_array_obj(ZAL_Interpreter *inter, int size);
+
 
 void zal_mark_sweep_gc(ZAL_Interpreter* inter);
 
