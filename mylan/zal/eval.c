@@ -1,3 +1,4 @@
+// 计算表达式
 #include <math.h>
 #include <string.h>
 #include "zal_in.h"
@@ -426,7 +427,7 @@ static void eval_binary_double_expr(ZAL_Interpreter *inter, ExpressionType type,
     ZAL_Value ret;
     ret.type = ZAL_DOUBLE_VALUE;
     double l, r;
-    // TODO: 写成宏?
+    // 取出数值
     if(left->type==ZAL_INT_VALUE) l = left->u.int_value;
     else l = left->u.double_value;
     if(right->type==ZAL_INT_VALUE) r = right->u.int_value;
@@ -443,7 +444,7 @@ static void eval_binary_double_expr(ZAL_Interpreter *inter, ExpressionType type,
         ret.u.double_value = l*r;
         break;
     case DIV_EXPRESSION:
-        ret.u.double_value = l/r;  // 除0 c会报错?
+        ret.u.double_value = l/r;  // 除0 c会报错
         break;
     case MOD_EXPRESSION:
         /* TODO: error: mod只能用于int */
@@ -564,9 +565,8 @@ static void call_native_func(ZAL_Interpreter *inter, ZAL_LocalEnvironment *calle
     zal_stack_push(inter, &ret);
 }
 
-/*****************************  *********************************/
+/***************************** 辅助对象 *********************************/
 
-/* TODO: 函数返回等 */
 // 作为左值是地址
 static ZAL_Value *get_lvalue(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr){
     ZAL_Value *ret=NULL;

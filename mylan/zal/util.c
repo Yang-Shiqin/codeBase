@@ -28,6 +28,7 @@ FuncDefList *zal_search_function(char *indentifier){
     return NULL;
 }
 
+// 先查找局部变量, 再查找全局变量
 VariableList *zal_search_local_variable(ZAL_Interpreter* inter, ZAL_LocalEnvironment *env, char *identifier){
     DBG_assert(env!=NULL, (NULL));
     VariableList *pos = env->local_variable;

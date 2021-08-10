@@ -1,4 +1,4 @@
-
+// 内置函数
 #include <string.h>
 #include "zal_in.h"
 
@@ -6,6 +6,7 @@ static ZAL_NativePointerInfo s_native_lib_info = {
     "zal.lang.file"
 };
 
+// 检查参数数
 static void check_argc(int argc, int should_be){
     if(argc<should_be){
         zal_runtime_error(0, ARGUMENT_TOO_FEW_ERR); // 实参太少
@@ -14,6 +15,7 @@ static void check_argc(int argc, int should_be){
     }
 }
 
+// 内置函数print执行过程
 ZAL_Value zal_nv_print(ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int argc, ZAL_Value* argv){
     ZAL_Value ret;
     char *to_be_printed=NULL;
@@ -150,6 +152,7 @@ ZAL_Value zal_nv_array(ZAL_Interpreter* inter, ZAL_LocalEnvironment* env, int ar
     ret = create_array_sub(inter, env, argc, argv, 0);
     return ret;
 }
+// 注册STDIN, STDOUT, STDERR
 void zal_add_std_fp(ZAL_Interpreter* inter){
     ZAL_Value fp;
     VariableList *var;

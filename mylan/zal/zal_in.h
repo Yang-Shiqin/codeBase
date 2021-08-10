@@ -1,3 +1,4 @@
+// 内部宏, 各种重要变量结构
 #ifndef __ZAL_IN_H__
 #define __ZAL_IN_H__
 #include "ZAL.h"

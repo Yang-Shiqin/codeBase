@@ -1,3 +1,4 @@
+// 辅助解析时生成字面常量
 #include "zal_in.h"
 #include <string.h>
 

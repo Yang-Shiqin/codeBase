@@ -1,3 +1,5 @@
+
+// 对外可见部分
 #ifndef __ZAL_H__
 #define __ZAL_H__
 

@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-// 注册内置函数
+// 注册所有内置函数
 void add_native_func(ZAL_Interpreter *inter){
     ZAL_add_native_function(inter, "print", zal_nv_print);
     ZAL_add_native_function(inter, "fopen", zal_nv_fopen);
@@ -13,6 +13,7 @@ void add_native_func(ZAL_Interpreter *inter){
     ZAL_add_native_function(inter, "fget_line", zal_nv_fget_line);
 }
 
+// 创建解释器
 ZAL_Interpreter *ZAL_create_interpreter(void){
     MEM_Storage *stor;
     ZAL_Interpreter *inter=NULL;
@@ -36,6 +37,7 @@ ZAL_Interpreter *ZAL_create_interpreter(void){
     return inter;
 }
 
+// 解析zal脚本, 构建分析树
 void ZAL_compile(ZAL_Interpreter *inter, FILE *fp){
     extern int yyparse(void);
     extern FILE *yyin;
@@ -48,6 +50,7 @@ void ZAL_compile(ZAL_Interpreter *inter, FILE *fp){
     // TODO
 }
 
+// 解释器运行
 void ZAL_interpret(ZAL_Interpreter *inter){
     inter->exe_storage = MEM_open_storage(0);
     zal_add_std_fp(inter);
@@ -55,13 +58,21 @@ void ZAL_interpret(ZAL_Interpreter *inter){
     zal_mark_sweep_gc(inter);
 }
 
+// 回收解释器
 void ZAL_destroy_interpreter(ZAL_Interpreter *inter){
+    VariableList *var = NULL;
+    while(inter->g_varible){
+        var = inter->g_varible;
+        inter->g_varible = var->next;
+        MEM_free(var);
+    }
     MEM_close_storage(inter->exe_storage);
-    // TODO
     MEM_free(inter->stack.stack);
+    zal_mark_sweep_gc(inter);       // 回收所有对象
     MEM_close_storage(inter->inter_storage);
 }
 
+// 添加一个内置函数
 void ZAL_add_native_function(ZAL_Interpreter *inter, char *identifier, ZAL_NativeFuncProc func){
     FuncDefList *func_node = zal_alloc(sizeof(FuncDefList));
     func_node->name = identifier;

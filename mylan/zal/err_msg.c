@@ -1,3 +1,4 @@
+// 报错信息
 #include "zal_in.h"
 
 ErrorMsgFormat zal_compile_error_msg_format[] = {

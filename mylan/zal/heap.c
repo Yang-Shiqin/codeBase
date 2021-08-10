@@ -1,3 +1,4 @@
+// 管理对象(方法), 内存回收
 #include <string.h>
 #include "zal_in.h"
 
@@ -16,14 +17,14 @@ static void gc_mark_ref_in_native_obj(ZAL_LocalEnvironment *env);
 static void gc_free_obj(ZAL_Interpreter *inter, ZAL_Object *obj);
 
 /*********************************** 定义区 *******************************************/
-
+// 根据字面量str生成对象
 ZAL_Object* zal_literal_to_string(ZAL_Interpreter *inter, char *str){
     ZAL_Object *str_obj = alloc_obj(inter, STRING_OBJ);
     str_obj->u.string.is_literal = ZAL_TRUE;
     str_obj->u.string.string = str;
     return str_obj;
 }
-
+// 根据非字面量str生成对象
 ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str){
     ZAL_Object *str_obj = alloc_obj(inter, STRING_OBJ);
     str_obj->u.string.is_literal = ZAL_FALSE;
@@ -31,7 +32,7 @@ ZAL_Object* zal_non_literal_to_string(ZAL_Interpreter *inter, char *str){
     inter->heap.size += strlen(str)+1;
     return str_obj;
 }
-
+// 根据非字面量str生成对象, 加入到环境里(内置函数防止被gc回收)
 ZAL_Object* zal_env_non_literal_to_string(ZAL_Interpreter *inter, ZAL_LocalEnvironment* env, char *str){
     ZAL_Object* ret = zal_non_literal_to_string(inter, str);
     add_ref_in_native_func(env, ret);

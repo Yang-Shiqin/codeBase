@@ -1,3 +1,4 @@
+// 执行语句
 #include "zal_in.h"
 
 static StatementResult exe_stat(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Statement *stat);

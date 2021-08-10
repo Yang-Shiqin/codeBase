@@ -1,5 +1,5 @@
+// 辅助gc, 保存临时变量; 顺便模拟eval函数值通过栈返回
 #include "zal_in.h"
-
 
 void zal_stack_init(ZAL_Interpreter* inter){
     inter->stack.stack = MEM_alloc(sizeof(ZAL_Value)*STACK_ALLOC_SIZE);
@@ -26,7 +26,7 @@ void zal_stack_shrink(ZAL_Interpreter* inter, int size){
     DBG_assert(inter->stack.top-size>=0, (NULL));
     inter->stack.top -= size;
 }
-
+// 查看栈内容, 不操作
 ZAL_Value * zal_stack_peek(ZAL_Interpreter* inter, int mov){
     DBG_assert(inter->stack.top-mov-1>=0, (NULL));
     return &(inter->stack.stack[inter->stack.top-mov-1]);
