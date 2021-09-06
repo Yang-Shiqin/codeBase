@@ -1,0 +1,2370 @@
+Grammar
+
+    0 $accept: script $end
+
+    1 script: func_def_or_state
+    2       | script func_def_or_state
+
+    3 func_def_or_state: func_def
+    4                  | state
+
+    5 func_def: FUNCTION IDENTIFIER LP para_list RP block
+    6         | FUNCTION IDENTIFIER LP RP block
+
+    7 state: expr SEMICOLON
+    8      | if_state
+    9      | for_state
+   10      | while_state
+   11      | return_state
+   12      | break_state
+   13      | continue_state
+
+   14 para_list: IDENTIFIER
+   15          | para_list COMMA IDENTIFIER
+
+   16 block: LC state_list RC
+   17      | LC RC
+
+   18 expr_list: %empty
+   19          | expr
+   20          | expr_list COMMA expr
+
+   21 if_state: IF LP condition RP block
+   22         | IF LP condition RP block elif
+   23         | IF LP condition RP block ELSE block
+   24         | IF LP condition RP block elif ELSE block
+
+   25 for_state: FOR LP expr SEMICOLON condition SEMICOLON expr RP block
+
+   26 while_state: WHILE LP condition RP block
+
+   27 return_state: RETURN expr SEMICOLON
+
+   28 break_state: BREAK SEMICOLON
+
+   29 continue_state: CONTINUE SEMICOLON
+
+   30 state_list: state
+   31           | state_list state
+
+   32 expr: logical_or_expr
+   33     | l_expr assign_operator expr
+
+   34 assign_operator: ASSIGN
+   35                | ADD_ASSIGN_T
+   36                | SUB_ASSIGN_T
+   37                | MUL_ASSIGN_T
+   38                | DIV_ASSIGN_T
+   39                | MOD_ASSIGN_T
+
+   40 condition: expr
+   41          | expr_list COMMA expr
+
+   42 elif: ELIF LP condition RP block
+   43     | elif ELIF LP condition RP block
+
+   44 l_expr: IDENTIFIER
+   45       | l_expr LB expr RB
+
+   46 logical_or_expr: logical_and_expr
+   47                | logical_or_expr LOGIC_OR logical_and_expr
+
+   48 logical_and_expr: eq_ne_expr
+   49                 | logical_and_expr LOGIC_AND eq_ne_expr
+
+   50 eq_ne_expr: compare_expr
+   51           | eq_ne_expr EQ compare_expr
+   52           | eq_ne_expr NE compare_expr
+
+   53 compare_expr: add_sub_expr
+   54             | compare_expr GT add_sub_expr
+   55             | compare_expr GE add_sub_expr
+   56             | compare_expr LT add_sub_expr
+   57             | compare_expr LE add_sub_expr
+
+   58 add_sub_expr: math_expr
+   59             | add_sub_expr ADD math_expr
+   60             | add_sub_expr SUB math_expr
+
+   61 math_expr: minus_expr
+   62          | math_expr MUL minus_expr
+   63          | math_expr DIV minus_expr
+   64          | math_expr MOD minus_expr
+
+   65 minus_expr: in_de_expr
+   66           | SUB pri_expr
+
+   67 in_de_expr: pri_expr
+   68           | pri_expr INC
+   69           | pri_expr DEC
+
+   70 pri_expr: INT_LITERAL
+   71         | DOUBLE_LITERAL
+   72         | STRING_LITERAL
+   73         | array_literal
+   74         | IDENTIFIER LP argv_list RP
+   75         | IDENTIFIER LP RP
+   76         | l_expr DOT IDENTIFIER LP argv_list RP
+   77         | l_expr DOT IDENTIFIER LP RP
+   78         | LP expr RP
+   79         | IDENTIFIER
+   80         | NULL_T
+   81         | TRUE_T
+   82         | FALSE_T
+
+   83 array_literal: LC expr_list RC
+   84              | LC expr_list COMMA RC
+
+   85 argv_list: expr
+   86          | argv_list COMMA expr
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256)
+    INT_LITERAL <expr> (258) 70
+    DOUBLE_LITERAL <expr> (259) 71
+    STRING_LITERAL <expr> (260) 72
+    IDENTIFIER <identifier> (261) 5 6 14 15 44 74 75 76 77 79
+    FUNCTION (262) 5 6
+    IF (263) 21 22 23 24
+    ELIF (264) 42 43
+    ELSE (265) 23 24
+    WHILE (266) 26
+    FOR (267) 25
+    RETURN (268) 27
+    CONTINUE (269) 29
+    BREAK (270) 28
+    NULL_T (271) 80
+    TRUE_T (272) 81
+    FALSE_T (273) 82
+    LP (274) 5 6 21 22 23 24 25 26 42 43 74 75 76 77 78
+    RP (275) 5 6 21 22 23 24 25 26 42 43 74 75 76 77 78
+    LC (276) 16 17 83 84
+    RC (277) 16 17 83 84
+    LB (278) 45
+    RB (279) 45
+    SEMICOLON (280) 7 25 27 28 29
+    COMMA (281) 15 20 41 84 86
+    LOGIC_AND (282) 49
+    LOGIC_OR (283) 47
+    ASSIGN (284) 34
+    EQ (285) 51
+    NE (286) 52
+    GE (287) 55
+    LE (288) 57
+    GT (289) 54
+    LT (290) 56
+    ADD (291) 59
+    SUB (292) 60 66
+    MUL (293) 62
+    DIV (294) 63
+    MOD (295) 64
+    INC (296) 68
+    DEC (297) 69
+    DOT (298) 76 77
+    ADD_ASSIGN_T (299) 35
+    SUB_ASSIGN_T (300) 36
+    MUL_ASSIGN_T (301) 37
+    DIV_ASSIGN_T (302) 38
+    MOD_ASSIGN_T (303) 39
+
+
+Nonterminals, with rules where they appear
+
+    $accept (49)
+        on left: 0
+    script (50)
+        on left: 1 2
+        on right: 0 2
+    func_def_or_state (51)
+        on left: 3 4
+        on right: 1 2
+    func_def (52)
+        on left: 5 6
+        on right: 3
+    state <state> (53)
+        on left: 7 8 9 10 11 12 13
+        on right: 4 30 31
+    para_list <para_list> (54)
+        on left: 14 15
+        on right: 5 15
+    block <block> (55)
+        on left: 16 17
+        on right: 5 6 21 22 23 24 25 26 42 43
+    expr_list <expr_list> (56)
+        on left: 18 19 20
+        on right: 20 41 83 84
+    if_state <state> (57)
+        on left: 21 22 23 24
+        on right: 8
+    for_state <state> (58)
+        on left: 25
+        on right: 9
+    while_state <state> (59)
+        on left: 26
+        on right: 10
+    return_state <state> (60)
+        on left: 27
+        on right: 11
+    break_state <state> (61)
+        on left: 28
+        on right: 12
+    continue_state <state> (62)
+        on left: 29
+        on right: 13
+    state_list <state_list> (63)
+        on left: 30 31
+        on right: 16 31
+    expr <expr> (64)
+        on left: 32 33
+        on right: 7 19 20 25 27 33 40 41 45 78 85 86
+    assign_operator <assign_operator> (65)
+        on left: 34 35 36 37 38 39
+        on right: 33
+    condition <expr> (66)
+        on left: 40 41
+        on right: 21 22 23 24 25 26 42 43
+    elif <elif> (67)
+        on left: 42 43
+        on right: 22 24 43
+    l_expr <expr> (68)
+        on left: 44 45
+        on right: 33 45 76 77
+    logical_or_expr <expr> (69)
+        on left: 46 47
+        on right: 32 47
+    logical_and_expr <expr> (70)
+        on left: 48 49
+        on right: 46 47 49
+    eq_ne_expr <expr> (71)
+        on left: 50 51 52
+        on right: 48 49 51 52
+    compare_expr <expr> (72)
+        on left: 53 54 55 56 57
+        on right: 50 51 52 54 55 56 57
+    add_sub_expr <expr> (73)
+        on left: 58 59 60
+        on right: 53 54 55 56 57 59 60
+    math_expr <expr> (74)
+        on left: 61 62 63 64
+        on right: 58 59 60 62 63 64
+    minus_expr <expr> (75)
+        on left: 65 66
+        on right: 61 62 63 64
+    in_de_expr <expr> (76)
+        on left: 67 68 69
+        on right: 65
+    pri_expr <expr> (77)
+        on left: 70 71 72 73 74 75 76 77 78 79 80 81 82
+        on right: 66 67 68 69
+    array_literal <expr> (78)
+        on left: 83 84
+        on right: 73
+    argv_list <argv_list> (79)
+        on left: 85 86
+        on right: 74 76 86
+
+
+State 0
+
+    0 $accept: . script $end
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    FUNCTION        shift, and go to state 5
+    IF              shift, and go to state 6
+    WHILE           shift, and go to state 7
+    FOR             shift, and go to state 8
+    RETURN          shift, and go to state 9
+    CONTINUE        shift, and go to state 10
+    BREAK           shift, and go to state 11
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    script             go to state 18
+    func_def_or_state  go to state 19
+    func_def           go to state 20
+    state              go to state 21
+    if_state           go to state 22
+    for_state          go to state 23
+    while_state        go to state 24
+    return_state       go to state 25
+    break_state        go to state 26
+    continue_state     go to state 27
+    expr               go to state 28
+    l_expr             go to state 29
+    logical_or_expr    go to state 30
+    logical_and_expr   go to state 31
+    eq_ne_expr         go to state 32
+    compare_expr       go to state 33
+    add_sub_expr       go to state 34
+    math_expr          go to state 35
+    minus_expr         go to state 36
+    in_de_expr         go to state 37
+    pri_expr           go to state 38
+    array_literal      go to state 39
+
+
+State 1
+
+   70 pri_expr: INT_LITERAL .
+
+    $default  reduce using rule 70 (pri_expr)
+
+
+State 2
+
+   71 pri_expr: DOUBLE_LITERAL .
+
+    $default  reduce using rule 71 (pri_expr)
+
+
+State 3
+
+   72 pri_expr: STRING_LITERAL .
+
+    $default  reduce using rule 72 (pri_expr)
+
+
+State 4
+
+   44 l_expr: IDENTIFIER .
+   74 pri_expr: IDENTIFIER . LP argv_list RP
+   75         | IDENTIFIER . LP RP
+   79         | IDENTIFIER .
+
+    LP  shift, and go to state 40
+
+    LB            reduce using rule 44 (l_expr)
+    ASSIGN        reduce using rule 44 (l_expr)
+    DOT           reduce using rule 44 (l_expr)
+    ADD_ASSIGN_T  reduce using rule 44 (l_expr)
+    SUB_ASSIGN_T  reduce using rule 44 (l_expr)
+    MUL_ASSIGN_T  reduce using rule 44 (l_expr)
+    DIV_ASSIGN_T  reduce using rule 44 (l_expr)
+    MOD_ASSIGN_T  reduce using rule 44 (l_expr)
+    $default      reduce using rule 79 (pri_expr)
+
+
+State 5
+
+    5 func_def: FUNCTION . IDENTIFIER LP para_list RP block
+    6         | FUNCTION . IDENTIFIER LP RP block
+
+    IDENTIFIER  shift, and go to state 41
+
+
+State 6
+
+   21 if_state: IF . LP condition RP block
+   22         | IF . LP condition RP block elif
+   23         | IF . LP condition RP block ELSE block
+   24         | IF . LP condition RP block elif ELSE block
+
+    LP  shift, and go to state 42
+
+
+State 7
+
+   26 while_state: WHILE . LP condition RP block
+
+    LP  shift, and go to state 43
+
+
+State 8
+
+   25 for_state: FOR . LP expr SEMICOLON condition SEMICOLON expr RP block
+
+    LP  shift, and go to state 44
+
+
+State 9
+
+   27 return_state: RETURN . expr SEMICOLON
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 45
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 10
+
+   29 continue_state: CONTINUE . SEMICOLON
+
+    SEMICOLON  shift, and go to state 46
+
+
+State 11
+
+   28 break_state: BREAK . SEMICOLON
+
+    SEMICOLON  shift, and go to state 47
+
+
+State 12
+
+   80 pri_expr: NULL_T .
+
+    $default  reduce using rule 80 (pri_expr)
+
+
+State 13
+
+   81 pri_expr: TRUE_T .
+
+    $default  reduce using rule 81 (pri_expr)
+
+
+State 14
+
+   82 pri_expr: FALSE_T .
+
+    $default  reduce using rule 82 (pri_expr)
+
+
+State 15
+
+   78 pri_expr: LP . expr RP
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 48
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 16
+
+   83 array_literal: LC . expr_list RC
+   84              | LC . expr_list COMMA RC
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    $default  reduce using rule 18 (expr_list)
+
+    expr_list         go to state 49
+    expr              go to state 50
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 17
+
+   66 minus_expr: SUB . pri_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+
+    l_expr         go to state 51
+    pri_expr       go to state 52
+    array_literal  go to state 39
+
+
+State 18
+
+    0 $accept: script . $end
+    2 script: script . func_def_or_state
+
+    $end            shift, and go to state 53
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    FUNCTION        shift, and go to state 5
+    IF              shift, and go to state 6
+    WHILE           shift, and go to state 7
+    FOR             shift, and go to state 8
+    RETURN          shift, and go to state 9
+    CONTINUE        shift, and go to state 10
+    BREAK           shift, and go to state 11
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    func_def_or_state  go to state 54
+    func_def           go to state 20
+    state              go to state 21
+    if_state           go to state 22
+    for_state          go to state 23
+    while_state        go to state 24
+    return_state       go to state 25
+    break_state        go to state 26
+    continue_state     go to state 27
+    expr               go to state 28
+    l_expr             go to state 29
+    logical_or_expr    go to state 30
+    logical_and_expr   go to state 31
+    eq_ne_expr         go to state 32
+    compare_expr       go to state 33
+    add_sub_expr       go to state 34
+    math_expr          go to state 35
+    minus_expr         go to state 36
+    in_de_expr         go to state 37
+    pri_expr           go to state 38
+    array_literal      go to state 39
+
+
+State 19
+
+    1 script: func_def_or_state .
+
+    $default  reduce using rule 1 (script)
+
+
+State 20
+
+    3 func_def_or_state: func_def .
+
+    $default  reduce using rule 3 (func_def_or_state)
+
+
+State 21
+
+    4 func_def_or_state: state .
+
+    $default  reduce using rule 4 (func_def_or_state)
+
+
+State 22
+
+    8 state: if_state .
+
+    $default  reduce using rule 8 (state)
+
+
+State 23
+
+    9 state: for_state .
+
+    $default  reduce using rule 9 (state)
+
+
+State 24
+
+   10 state: while_state .
+
+    $default  reduce using rule 10 (state)
+
+
+State 25
+
+   11 state: return_state .
+
+    $default  reduce using rule 11 (state)
+
+
+State 26
+
+   12 state: break_state .
+
+    $default  reduce using rule 12 (state)
+
+
+State 27
+
+   13 state: continue_state .
+
+    $default  reduce using rule 13 (state)
+
+
+State 28
+
+    7 state: expr . SEMICOLON
+
+    SEMICOLON  shift, and go to state 55
+
+
+State 29
+
+   33 expr: l_expr . assign_operator expr
+   45 l_expr: l_expr . LB expr RB
+   76 pri_expr: l_expr . DOT IDENTIFIER LP argv_list RP
+   77         | l_expr . DOT IDENTIFIER LP RP
+
+    LB            shift, and go to state 56
+    ASSIGN        shift, and go to state 57
+    DOT           shift, and go to state 58
+    ADD_ASSIGN_T  shift, and go to state 59
+    SUB_ASSIGN_T  shift, and go to state 60
+    MUL_ASSIGN_T  shift, and go to state 61
+    DIV_ASSIGN_T  shift, and go to state 62
+    MOD_ASSIGN_T  shift, and go to state 63
+
+    assign_operator  go to state 64
+
+
+State 30
+
+   32 expr: logical_or_expr .
+   47 logical_or_expr: logical_or_expr . LOGIC_OR logical_and_expr
+
+    LOGIC_OR  shift, and go to state 65
+
+    $default  reduce using rule 32 (expr)
+
+
+State 31
+
+   46 logical_or_expr: logical_and_expr .
+   49 logical_and_expr: logical_and_expr . LOGIC_AND eq_ne_expr
+
+    LOGIC_AND  shift, and go to state 66
+
+    $default  reduce using rule 46 (logical_or_expr)
+
+
+State 32
+
+   48 logical_and_expr: eq_ne_expr .
+   51 eq_ne_expr: eq_ne_expr . EQ compare_expr
+   52           | eq_ne_expr . NE compare_expr
+
+    EQ  shift, and go to state 67
+    NE  shift, and go to state 68
+
+    $default  reduce using rule 48 (logical_and_expr)
+
+
+State 33
+
+   50 eq_ne_expr: compare_expr .
+   54 compare_expr: compare_expr . GT add_sub_expr
+   55             | compare_expr . GE add_sub_expr
+   56             | compare_expr . LT add_sub_expr
+   57             | compare_expr . LE add_sub_expr
+
+    GE  shift, and go to state 69
+    LE  shift, and go to state 70
+    GT  shift, and go to state 71
+    LT  shift, and go to state 72
+
+    $default  reduce using rule 50 (eq_ne_expr)
+
+
+State 34
+
+   53 compare_expr: add_sub_expr .
+   59 add_sub_expr: add_sub_expr . ADD math_expr
+   60             | add_sub_expr . SUB math_expr
+
+    ADD  shift, and go to state 73
+    SUB  shift, and go to state 74
+
+    $default  reduce using rule 53 (compare_expr)
+
+
+State 35
+
+   58 add_sub_expr: math_expr .
+   62 math_expr: math_expr . MUL minus_expr
+   63          | math_expr . DIV minus_expr
+   64          | math_expr . MOD minus_expr
+
+    MUL  shift, and go to state 75
+    DIV  shift, and go to state 76
+    MOD  shift, and go to state 77
+
+    $default  reduce using rule 58 (add_sub_expr)
+
+
+State 36
+
+   61 math_expr: minus_expr .
+
+    $default  reduce using rule 61 (math_expr)
+
+
+State 37
+
+   65 minus_expr: in_de_expr .
+
+    $default  reduce using rule 65 (minus_expr)
+
+
+State 38
+
+   67 in_de_expr: pri_expr .
+   68           | pri_expr . INC
+   69           | pri_expr . DEC
+
+    INC  shift, and go to state 78
+    DEC  shift, and go to state 79
+
+    $default  reduce using rule 67 (in_de_expr)
+
+
+State 39
+
+   73 pri_expr: array_literal .
+
+    $default  reduce using rule 73 (pri_expr)
+
+
+State 40
+
+   74 pri_expr: IDENTIFIER LP . argv_list RP
+   75         | IDENTIFIER LP . RP
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    RP              shift, and go to state 80
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 81
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+    argv_list         go to state 82
+
+
+State 41
+
+    5 func_def: FUNCTION IDENTIFIER . LP para_list RP block
+    6         | FUNCTION IDENTIFIER . LP RP block
+
+    LP  shift, and go to state 83
+
+
+State 42
+
+   21 if_state: IF LP . condition RP block
+   22         | IF LP . condition RP block elif
+   23         | IF LP . condition RP block ELSE block
+   24         | IF LP . condition RP block elif ELSE block
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    $default  reduce using rule 18 (expr_list)
+
+    expr_list         go to state 84
+    expr              go to state 85
+    condition         go to state 86
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 43
+
+   26 while_state: WHILE LP . condition RP block
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    $default  reduce using rule 18 (expr_list)
+
+    expr_list         go to state 84
+    expr              go to state 85
+    condition         go to state 87
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 44
+
+   25 for_state: FOR LP . expr SEMICOLON condition SEMICOLON expr RP block
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 88
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 45
+
+   27 return_state: RETURN expr . SEMICOLON
+
+    SEMICOLON  shift, and go to state 89
+
+
+State 46
+
+   29 continue_state: CONTINUE SEMICOLON .
+
+    $default  reduce using rule 29 (continue_state)
+
+
+State 47
+
+   28 break_state: BREAK SEMICOLON .
+
+    $default  reduce using rule 28 (break_state)
+
+
+State 48
+
+   78 pri_expr: LP expr . RP
+
+    RP  shift, and go to state 90
+
+
+State 49
+
+   20 expr_list: expr_list . COMMA expr
+   83 array_literal: LC expr_list . RC
+   84              | LC expr_list . COMMA RC
+
+    RC     shift, and go to state 91
+    COMMA  shift, and go to state 92
+
+
+State 50
+
+   19 expr_list: expr .
+
+    $default  reduce using rule 19 (expr_list)
+
+
+State 51
+
+   45 l_expr: l_expr . LB expr RB
+   76 pri_expr: l_expr . DOT IDENTIFIER LP argv_list RP
+   77         | l_expr . DOT IDENTIFIER LP RP
+
+    LB   shift, and go to state 56
+    DOT  shift, and go to state 58
+
+
+State 52
+
+   66 minus_expr: SUB pri_expr .
+
+    $default  reduce using rule 66 (minus_expr)
+
+
+State 53
+
+    0 $accept: script $end .
+
+    $default  accept
+
+
+State 54
+
+    2 script: script func_def_or_state .
+
+    $default  reduce using rule 2 (script)
+
+
+State 55
+
+    7 state: expr SEMICOLON .
+
+    $default  reduce using rule 7 (state)
+
+
+State 56
+
+   45 l_expr: l_expr LB . expr RB
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 93
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 57
+
+   34 assign_operator: ASSIGN .
+
+    $default  reduce using rule 34 (assign_operator)
+
+
+State 58
+
+   76 pri_expr: l_expr DOT . IDENTIFIER LP argv_list RP
+   77         | l_expr DOT . IDENTIFIER LP RP
+
+    IDENTIFIER  shift, and go to state 94
+
+
+State 59
+
+   35 assign_operator: ADD_ASSIGN_T .
+
+    $default  reduce using rule 35 (assign_operator)
+
+
+State 60
+
+   36 assign_operator: SUB_ASSIGN_T .
+
+    $default  reduce using rule 36 (assign_operator)
+
+
+State 61
+
+   37 assign_operator: MUL_ASSIGN_T .
+
+    $default  reduce using rule 37 (assign_operator)
+
+
+State 62
+
+   38 assign_operator: DIV_ASSIGN_T .
+
+    $default  reduce using rule 38 (assign_operator)
+
+
+State 63
+
+   39 assign_operator: MOD_ASSIGN_T .
+
+    $default  reduce using rule 39 (assign_operator)
+
+
+State 64
+
+   33 expr: l_expr assign_operator . expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 95
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 65
+
+   47 logical_or_expr: logical_or_expr LOGIC_OR . logical_and_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr            go to state 51
+    logical_and_expr  go to state 96
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 66
+
+   49 logical_and_expr: logical_and_expr LOGIC_AND . eq_ne_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    eq_ne_expr     go to state 97
+    compare_expr   go to state 33
+    add_sub_expr   go to state 34
+    math_expr      go to state 35
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 67
+
+   51 eq_ne_expr: eq_ne_expr EQ . compare_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    compare_expr   go to state 98
+    add_sub_expr   go to state 34
+    math_expr      go to state 35
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 68
+
+   52 eq_ne_expr: eq_ne_expr NE . compare_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    compare_expr   go to state 99
+    add_sub_expr   go to state 34
+    math_expr      go to state 35
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 69
+
+   55 compare_expr: compare_expr GE . add_sub_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    add_sub_expr   go to state 100
+    math_expr      go to state 35
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 70
+
+   57 compare_expr: compare_expr LE . add_sub_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    add_sub_expr   go to state 101
+    math_expr      go to state 35
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 71
+
+   54 compare_expr: compare_expr GT . add_sub_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    add_sub_expr   go to state 102
+    math_expr      go to state 35
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 72
+
+   56 compare_expr: compare_expr LT . add_sub_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    add_sub_expr   go to state 103
+    math_expr      go to state 35
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 73
+
+   59 add_sub_expr: add_sub_expr ADD . math_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    math_expr      go to state 104
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 74
+
+   60 add_sub_expr: add_sub_expr SUB . math_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    math_expr      go to state 105
+    minus_expr     go to state 36
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 75
+
+   62 math_expr: math_expr MUL . minus_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    minus_expr     go to state 106
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 76
+
+   63 math_expr: math_expr DIV . minus_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    minus_expr     go to state 107
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 77
+
+   64 math_expr: math_expr MOD . minus_expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    l_expr         go to state 51
+    minus_expr     go to state 108
+    in_de_expr     go to state 37
+    pri_expr       go to state 38
+    array_literal  go to state 39
+
+
+State 78
+
+   68 in_de_expr: pri_expr INC .
+
+    $default  reduce using rule 68 (in_de_expr)
+
+
+State 79
+
+   69 in_de_expr: pri_expr DEC .
+
+    $default  reduce using rule 69 (in_de_expr)
+
+
+State 80
+
+   75 pri_expr: IDENTIFIER LP RP .
+
+    $default  reduce using rule 75 (pri_expr)
+
+
+State 81
+
+   85 argv_list: expr .
+
+    $default  reduce using rule 85 (argv_list)
+
+
+State 82
+
+   74 pri_expr: IDENTIFIER LP argv_list . RP
+   86 argv_list: argv_list . COMMA expr
+
+    RP     shift, and go to state 109
+    COMMA  shift, and go to state 110
+
+
+State 83
+
+    5 func_def: FUNCTION IDENTIFIER LP . para_list RP block
+    6         | FUNCTION IDENTIFIER LP . RP block
+
+    IDENTIFIER  shift, and go to state 111
+    RP          shift, and go to state 112
+
+    para_list  go to state 113
+
+
+State 84
+
+   20 expr_list: expr_list . COMMA expr
+   41 condition: expr_list . COMMA expr
+
+    COMMA  shift, and go to state 114
+
+
+State 85
+
+   19 expr_list: expr .
+   40 condition: expr .
+
+    COMMA     reduce using rule 19 (expr_list)
+    $default  reduce using rule 40 (condition)
+
+
+State 86
+
+   21 if_state: IF LP condition . RP block
+   22         | IF LP condition . RP block elif
+   23         | IF LP condition . RP block ELSE block
+   24         | IF LP condition . RP block elif ELSE block
+
+    RP  shift, and go to state 115
+
+
+State 87
+
+   26 while_state: WHILE LP condition . RP block
+
+    RP  shift, and go to state 116
+
+
+State 88
+
+   25 for_state: FOR LP expr . SEMICOLON condition SEMICOLON expr RP block
+
+    SEMICOLON  shift, and go to state 117
+
+
+State 89
+
+   27 return_state: RETURN expr SEMICOLON .
+
+    $default  reduce using rule 27 (return_state)
+
+
+State 90
+
+   78 pri_expr: LP expr RP .
+
+    $default  reduce using rule 78 (pri_expr)
+
+
+State 91
+
+   83 array_literal: LC expr_list RC .
+
+    $default  reduce using rule 83 (array_literal)
+
+
+State 92
+
+   20 expr_list: expr_list COMMA . expr
+   84 array_literal: LC expr_list COMMA . RC
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    RC              shift, and go to state 118
+    SUB             shift, and go to state 17
+
+    expr              go to state 119
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 93
+
+   45 l_expr: l_expr LB expr . RB
+
+    RB  shift, and go to state 120
+
+
+State 94
+
+   76 pri_expr: l_expr DOT IDENTIFIER . LP argv_list RP
+   77         | l_expr DOT IDENTIFIER . LP RP
+
+    LP  shift, and go to state 121
+
+
+State 95
+
+   33 expr: l_expr assign_operator expr .
+
+    $default  reduce using rule 33 (expr)
+
+
+State 96
+
+   47 logical_or_expr: logical_or_expr LOGIC_OR logical_and_expr .
+   49 logical_and_expr: logical_and_expr . LOGIC_AND eq_ne_expr
+
+    LOGIC_AND  shift, and go to state 66
+
+    $default  reduce using rule 47 (logical_or_expr)
+
+
+State 97
+
+   49 logical_and_expr: logical_and_expr LOGIC_AND eq_ne_expr .
+   51 eq_ne_expr: eq_ne_expr . EQ compare_expr
+   52           | eq_ne_expr . NE compare_expr
+
+    EQ  shift, and go to state 67
+    NE  shift, and go to state 68
+
+    $default  reduce using rule 49 (logical_and_expr)
+
+
+State 98
+
+   51 eq_ne_expr: eq_ne_expr EQ compare_expr .
+   54 compare_expr: compare_expr . GT add_sub_expr
+   55             | compare_expr . GE add_sub_expr
+   56             | compare_expr . LT add_sub_expr
+   57             | compare_expr . LE add_sub_expr
+
+    GE  shift, and go to state 69
+    LE  shift, and go to state 70
+    GT  shift, and go to state 71
+    LT  shift, and go to state 72
+
+    $default  reduce using rule 51 (eq_ne_expr)
+
+
+State 99
+
+   52 eq_ne_expr: eq_ne_expr NE compare_expr .
+   54 compare_expr: compare_expr . GT add_sub_expr
+   55             | compare_expr . GE add_sub_expr
+   56             | compare_expr . LT add_sub_expr
+   57             | compare_expr . LE add_sub_expr
+
+    GE  shift, and go to state 69
+    LE  shift, and go to state 70
+    GT  shift, and go to state 71
+    LT  shift, and go to state 72
+
+    $default  reduce using rule 52 (eq_ne_expr)
+
+
+State 100
+
+   55 compare_expr: compare_expr GE add_sub_expr .
+   59 add_sub_expr: add_sub_expr . ADD math_expr
+   60             | add_sub_expr . SUB math_expr
+
+    ADD  shift, and go to state 73
+    SUB  shift, and go to state 74
+
+    $default  reduce using rule 55 (compare_expr)
+
+
+State 101
+
+   57 compare_expr: compare_expr LE add_sub_expr .
+   59 add_sub_expr: add_sub_expr . ADD math_expr
+   60             | add_sub_expr . SUB math_expr
+
+    ADD  shift, and go to state 73
+    SUB  shift, and go to state 74
+
+    $default  reduce using rule 57 (compare_expr)
+
+
+State 102
+
+   54 compare_expr: compare_expr GT add_sub_expr .
+   59 add_sub_expr: add_sub_expr . ADD math_expr
+   60             | add_sub_expr . SUB math_expr
+
+    ADD  shift, and go to state 73
+    SUB  shift, and go to state 74
+
+    $default  reduce using rule 54 (compare_expr)
+
+
+State 103
+
+   56 compare_expr: compare_expr LT add_sub_expr .
+   59 add_sub_expr: add_sub_expr . ADD math_expr
+   60             | add_sub_expr . SUB math_expr
+
+    ADD  shift, and go to state 73
+    SUB  shift, and go to state 74
+
+    $default  reduce using rule 56 (compare_expr)
+
+
+State 104
+
+   59 add_sub_expr: add_sub_expr ADD math_expr .
+   62 math_expr: math_expr . MUL minus_expr
+   63          | math_expr . DIV minus_expr
+   64          | math_expr . MOD minus_expr
+
+    MUL  shift, and go to state 75
+    DIV  shift, and go to state 76
+    MOD  shift, and go to state 77
+
+    $default  reduce using rule 59 (add_sub_expr)
+
+
+State 105
+
+   60 add_sub_expr: add_sub_expr SUB math_expr .
+   62 math_expr: math_expr . MUL minus_expr
+   63          | math_expr . DIV minus_expr
+   64          | math_expr . MOD minus_expr
+
+    MUL  shift, and go to state 75
+    DIV  shift, and go to state 76
+    MOD  shift, and go to state 77
+
+    $default  reduce using rule 60 (add_sub_expr)
+
+
+State 106
+
+   62 math_expr: math_expr MUL minus_expr .
+
+    $default  reduce using rule 62 (math_expr)
+
+
+State 107
+
+   63 math_expr: math_expr DIV minus_expr .
+
+    $default  reduce using rule 63 (math_expr)
+
+
+State 108
+
+   64 math_expr: math_expr MOD minus_expr .
+
+    $default  reduce using rule 64 (math_expr)
+
+
+State 109
+
+   74 pri_expr: IDENTIFIER LP argv_list RP .
+
+    $default  reduce using rule 74 (pri_expr)
+
+
+State 110
+
+   86 argv_list: argv_list COMMA . expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 122
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 111
+
+   14 para_list: IDENTIFIER .
+
+    $default  reduce using rule 14 (para_list)
+
+
+State 112
+
+    6 func_def: FUNCTION IDENTIFIER LP RP . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 124
+
+
+State 113
+
+    5 func_def: FUNCTION IDENTIFIER LP para_list . RP block
+   15 para_list: para_list . COMMA IDENTIFIER
+
+    RP     shift, and go to state 125
+    COMMA  shift, and go to state 126
+
+
+State 114
+
+   20 expr_list: expr_list COMMA . expr
+   41 condition: expr_list COMMA . expr
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 127
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 115
+
+   21 if_state: IF LP condition RP . block
+   22         | IF LP condition RP . block elif
+   23         | IF LP condition RP . block ELSE block
+   24         | IF LP condition RP . block elif ELSE block
+
+    LC  shift, and go to state 123
+
+    block  go to state 128
+
+
+State 116
+
+   26 while_state: WHILE LP condition RP . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 129
+
+
+State 117
+
+   25 for_state: FOR LP expr SEMICOLON . condition SEMICOLON expr RP block
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    $default  reduce using rule 18 (expr_list)
+
+    expr_list         go to state 84
+    expr              go to state 85
+    condition         go to state 130
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 118
+
+   84 array_literal: LC expr_list COMMA RC .
+
+    $default  reduce using rule 84 (array_literal)
+
+
+State 119
+
+   20 expr_list: expr_list COMMA expr .
+
+    $default  reduce using rule 20 (expr_list)
+
+
+State 120
+
+   45 l_expr: l_expr LB expr RB .
+
+    $default  reduce using rule 45 (l_expr)
+
+
+State 121
+
+   76 pri_expr: l_expr DOT IDENTIFIER LP . argv_list RP
+   77         | l_expr DOT IDENTIFIER LP . RP
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    RP              shift, and go to state 131
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 81
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+    argv_list         go to state 132
+
+
+State 122
+
+   86 argv_list: argv_list COMMA expr .
+
+    $default  reduce using rule 86 (argv_list)
+
+
+State 123
+
+   16 block: LC . state_list RC
+   17      | LC . RC
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    IF              shift, and go to state 6
+    WHILE           shift, and go to state 7
+    FOR             shift, and go to state 8
+    RETURN          shift, and go to state 9
+    CONTINUE        shift, and go to state 10
+    BREAK           shift, and go to state 11
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    RC              shift, and go to state 133
+    SUB             shift, and go to state 17
+
+    state             go to state 134
+    if_state          go to state 22
+    for_state         go to state 23
+    while_state       go to state 24
+    return_state      go to state 25
+    break_state       go to state 26
+    continue_state    go to state 27
+    state_list        go to state 135
+    expr              go to state 28
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 124
+
+    6 func_def: FUNCTION IDENTIFIER LP RP block .
+
+    $default  reduce using rule 6 (func_def)
+
+
+State 125
+
+    5 func_def: FUNCTION IDENTIFIER LP para_list RP . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 136
+
+
+State 126
+
+   15 para_list: para_list COMMA . IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 137
+
+
+State 127
+
+   20 expr_list: expr_list COMMA expr .
+   41 condition: expr_list COMMA expr .
+
+    COMMA     reduce using rule 20 (expr_list)
+    $default  reduce using rule 41 (condition)
+
+
+State 128
+
+   21 if_state: IF LP condition RP block .
+   22         | IF LP condition RP block . elif
+   23         | IF LP condition RP block . ELSE block
+   24         | IF LP condition RP block . elif ELSE block
+
+    ELIF  shift, and go to state 138
+    ELSE  shift, and go to state 139
+
+    $default  reduce using rule 21 (if_state)
+
+    elif  go to state 140
+
+
+State 129
+
+   26 while_state: WHILE LP condition RP block .
+
+    $default  reduce using rule 26 (while_state)
+
+
+State 130
+
+   25 for_state: FOR LP expr SEMICOLON condition . SEMICOLON expr RP block
+
+    SEMICOLON  shift, and go to state 141
+
+
+State 131
+
+   77 pri_expr: l_expr DOT IDENTIFIER LP RP .
+
+    $default  reduce using rule 77 (pri_expr)
+
+
+State 132
+
+   76 pri_expr: l_expr DOT IDENTIFIER LP argv_list . RP
+   86 argv_list: argv_list . COMMA expr
+
+    RP     shift, and go to state 142
+    COMMA  shift, and go to state 110
+
+
+State 133
+
+   17 block: LC RC .
+
+    $default  reduce using rule 17 (block)
+
+
+State 134
+
+   30 state_list: state .
+
+    $default  reduce using rule 30 (state_list)
+
+
+State 135
+
+   16 block: LC state_list . RC
+   31 state_list: state_list . state
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    IF              shift, and go to state 6
+    WHILE           shift, and go to state 7
+    FOR             shift, and go to state 8
+    RETURN          shift, and go to state 9
+    CONTINUE        shift, and go to state 10
+    BREAK           shift, and go to state 11
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    RC              shift, and go to state 143
+    SUB             shift, and go to state 17
+
+    state             go to state 144
+    if_state          go to state 22
+    for_state         go to state 23
+    while_state       go to state 24
+    return_state      go to state 25
+    break_state       go to state 26
+    continue_state    go to state 27
+    expr              go to state 28
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 136
+
+    5 func_def: FUNCTION IDENTIFIER LP para_list RP block .
+
+    $default  reduce using rule 5 (func_def)
+
+
+State 137
+
+   15 para_list: para_list COMMA IDENTIFIER .
+
+    $default  reduce using rule 15 (para_list)
+
+
+State 138
+
+   42 elif: ELIF . LP condition RP block
+
+    LP  shift, and go to state 145
+
+
+State 139
+
+   23 if_state: IF LP condition RP block ELSE . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 146
+
+
+State 140
+
+   22 if_state: IF LP condition RP block elif .
+   24         | IF LP condition RP block elif . ELSE block
+   43 elif: elif . ELIF LP condition RP block
+
+    ELIF  shift, and go to state 147
+    ELSE  shift, and go to state 148
+
+    $default  reduce using rule 22 (if_state)
+
+
+State 141
+
+   25 for_state: FOR LP expr SEMICOLON condition SEMICOLON . expr RP block
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    expr              go to state 149
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 142
+
+   76 pri_expr: l_expr DOT IDENTIFIER LP argv_list RP .
+
+    $default  reduce using rule 76 (pri_expr)
+
+
+State 143
+
+   16 block: LC state_list RC .
+
+    $default  reduce using rule 16 (block)
+
+
+State 144
+
+   31 state_list: state_list state .
+
+    $default  reduce using rule 31 (state_list)
+
+
+State 145
+
+   42 elif: ELIF LP . condition RP block
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    $default  reduce using rule 18 (expr_list)
+
+    expr_list         go to state 84
+    expr              go to state 85
+    condition         go to state 150
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 146
+
+   23 if_state: IF LP condition RP block ELSE block .
+
+    $default  reduce using rule 23 (if_state)
+
+
+State 147
+
+   43 elif: elif ELIF . LP condition RP block
+
+    LP  shift, and go to state 151
+
+
+State 148
+
+   24 if_state: IF LP condition RP block elif ELSE . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 152
+
+
+State 149
+
+   25 for_state: FOR LP expr SEMICOLON condition SEMICOLON expr . RP block
+
+    RP  shift, and go to state 153
+
+
+State 150
+
+   42 elif: ELIF LP condition . RP block
+
+    RP  shift, and go to state 154
+
+
+State 151
+
+   43 elif: elif ELIF LP . condition RP block
+
+    INT_LITERAL     shift, and go to state 1
+    DOUBLE_LITERAL  shift, and go to state 2
+    STRING_LITERAL  shift, and go to state 3
+    IDENTIFIER      shift, and go to state 4
+    NULL_T          shift, and go to state 12
+    TRUE_T          shift, and go to state 13
+    FALSE_T         shift, and go to state 14
+    LP              shift, and go to state 15
+    LC              shift, and go to state 16
+    SUB             shift, and go to state 17
+
+    $default  reduce using rule 18 (expr_list)
+
+    expr_list         go to state 84
+    expr              go to state 85
+    condition         go to state 155
+    l_expr            go to state 29
+    logical_or_expr   go to state 30
+    logical_and_expr  go to state 31
+    eq_ne_expr        go to state 32
+    compare_expr      go to state 33
+    add_sub_expr      go to state 34
+    math_expr         go to state 35
+    minus_expr        go to state 36
+    in_de_expr        go to state 37
+    pri_expr          go to state 38
+    array_literal     go to state 39
+
+
+State 152
+
+   24 if_state: IF LP condition RP block elif ELSE block .
+
+    $default  reduce using rule 24 (if_state)
+
+
+State 153
+
+   25 for_state: FOR LP expr SEMICOLON condition SEMICOLON expr RP . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 156
+
+
+State 154
+
+   42 elif: ELIF LP condition RP . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 157
+
+
+State 155
+
+   43 elif: elif ELIF LP condition . RP block
+
+    RP  shift, and go to state 158
+
+
+State 156
+
+   25 for_state: FOR LP expr SEMICOLON condition SEMICOLON expr RP block .
+
+    $default  reduce using rule 25 (for_state)
+
+
+State 157
+
+   42 elif: ELIF LP condition RP block .
+
+    $default  reduce using rule 42 (elif)
+
+
+State 158
+
+   43 elif: elif ELIF LP condition RP . block
+
+    LC  shift, and go to state 123
+
+    block  go to state 159
+
+
+State 159
+
+   43 elif: elif ELIF LP condition RP block .
+
+    $default  reduce using rule 43 (elif)

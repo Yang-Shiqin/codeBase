@@ -14,7 +14,7 @@ static void eval_string_expr(ZAL_Interpreter *inter, char *string_expr);
 static void eval_array_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionList *array_liter_expr);
 static void eval_index_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
 static void eval_identifier_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
-static void eval_assign_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *l_value, Expression *r_value);
+static void eval_assign_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, AssignExpression expr);
 static void eval_binary_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right);
 static void eval_logical_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, ExpressionType type, Expression *left, Expression *right);
 static void eval_minus_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *expr);
@@ -92,7 +92,7 @@ static void eval_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Express
         eval_identifier_expr(inter, env, expr); // 需报错信息, 就传了整个
         break;
     case ASSIGN_EXPRESSION:
-        eval_assign_expr(inter, env, expr->u.assign_expr.l_value, expr->u.assign_expr.r_value);
+        eval_assign_expr(inter, env, expr->u.assign_expr);
         break;
     case ADD_EXPRESSION:
     case SUB_EXPRESSION:
@@ -200,13 +200,36 @@ static void eval_identifier_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *e
     zal_stack_push(inter, &ret);
 }
 
-static void eval_assign_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, Expression *l_value, Expression *r_value){
-    ZAL_Value *ret;
-    ZAL_Value *dest = get_lvalue(inter, env, l_value);
-
-    eval_expr(inter, env, r_value);
+// TODO
+static void eval_assign_expr(ZAL_Interpreter *inter, ZAL_LocalEnvironment *env, AssignExpression expr){
+    ZAL_Value *ret=NULL;
+    Expression *l_expr = expr.l_value;
+    ZAL_Value *dest = get_lvalue(inter, env, l_expr);
+    Expression *r_expr = expr.r_value;
+    switch (expr.operator)
+    {
+    case NORMAL_ASSIGN:
+        eval_expr(inter, env, r_expr);      // 右值
+        break;
+    case ADD_ASSIGN:
+        eval_binary_expr(inter, env, ADD_EXPRESSION, l_expr, r_expr);
+        break;
+    case SUB_ASSIGN:
+        eval_binary_expr(inter, env, SUB_EXPRESSION, l_expr, r_expr);
+        break;
+    case MUL_ASSIGN:
+        eval_binary_expr(inter, env, MUL_EXPRESSION, l_expr, r_expr);
+        break;
+    case DIV_ASSIGN:
+        eval_binary_expr(inter, env, DIV_EXPRESSION, l_expr, r_expr);
+        break;
+    case MOD_ASSIGN:
+        eval_binary_expr(inter, env, MOD_EXPRESSION, l_expr, r_expr);
+        break;
+    default:
+        DBG_panic(("bad assign_operator type: %d\n", expr.operator));
+    }
     ret = zal_stack_peek(inter, 0);
-
     *dest = *ret;
 }
 

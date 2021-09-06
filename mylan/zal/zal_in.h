@@ -61,6 +61,15 @@ typedef enum{
 }ExpressionType;
 
 typedef enum{
+    NORMAL_ASSIGN = 1,
+    ADD_ASSIGN,     // +=
+    SUB_ASSIGN,
+    MUL_ASSIGN,
+    DIV_ASSIGN,
+    MOD_ASSIGN,
+}AssignOperator;
+
+typedef enum{
     EXPRESSION_STAT = 1,
     IF_STAT,
     FOR_STAT,
@@ -248,6 +257,7 @@ struct ZAL_LocalEnvironment_tag{
 /************ 表达式 ************/
 struct AssignExpression_tag{
     Expression      *l_value;
+    AssignOperator  operator;
     Expression      *r_value;
 };
 
@@ -409,7 +419,7 @@ Expression* zal_alloc_expr(ExpressionType type);
 Expression* zal_create_identifier_expr(char *identifier);
 Expression* zal_create_bool_expr(ZAL_Boolean value);
 Expression* zal_create_null_expr(void);
-Expression* zal_create_assign_expr(Expression *l_value, Expression *r_value);
+Expression* zal_create_assign_expr(Expression *l_value, AssignOperator oper, Expression *r_value);
 Expression* zal_create_binary_expr(ExpressionType operator, Expression *left, Expression *right);
 Expression* zal_create_minus_expr(Expression *expr);
 Expression* zal_create_inc_dec_expr(Expression *expr, ExpressionType type);

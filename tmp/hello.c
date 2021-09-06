@@ -1,25 +1,34 @@
 #include <stdio.h>
-enum w{
-    aa,
-    bb
+#include <string.h>
+
+struct s{
+    int a;
+    union{
+        int b;
+    }u;
+    int aaaa[0];
 };
-typedef struct b hh;
-struct b{
-    int qqq;
-    int qq;
-};
-struct a{
-    struct b aaa;
-    int aaaa;
-};
+
+struct s func(){
+    struct s res;
+    res.u.b = 3;
+    return res;
+}
+
+struct s func2(){
+    struct s res;
+    int c = 40;
+    res.a = 22;
+    return res;
+}
 
 int main()
 {
-    int a=0;
-    a++ = 1;
-    int aa[10] = {,,,2};
-    while(1, 0){}
-    printf("%c", '\"');
+    int a;
+
+    short s = 1;
+    s = s+1;
     return 0;
 }
+
 

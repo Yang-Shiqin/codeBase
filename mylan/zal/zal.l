@@ -51,6 +51,11 @@ static void increase_line_number(void){
 <INITIAL>"*"            return MUL;
 <INITIAL>"/"            return DIV;
 <INITIAL>"%"            return MOD;
+<INITIAL>"+="           return ADD_ASSIGN_T;
+<INITIAL>"-="           return SUB_ASSIGN_T;
+<INITIAL>"*="           return MUL_ASSIGN_T;
+<INITIAL>"/="           return DIV_ASSIGN_T;
+<INITIAL>"%="           return MOD_ASSIGN_T;
 <INITIAL>"++"           return INC;
 <INITIAL>"--"           return DEC;
 <INITIAL>"."            return DOT;

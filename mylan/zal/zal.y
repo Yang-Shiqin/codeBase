@@ -28,7 +28,8 @@ yyerror(char const *str)
     Statement       *state;
     StatementList   *state_list;
     Block           *block;
-    Elif           *elif;
+    Elif            *elif;
+    AssignOperator  assign_operator;
 }
 %token <expr>       INT_LITERAL
 %token <expr>       DOUBLE_LITERAL
@@ -37,6 +38,7 @@ yyerror(char const *str)
 %token FUNCTION IF ELIF ELSE WHILE FOR RETURN CONTINUE BREAK NULL_T 
         TRUE_T FALSE_T LP RP LC RC LB RB SEMICOLON COMMA LOGIC_AND 
         LOGIC_OR ASSIGN EQ NE GE LE GT LT ADD SUB MUL DIV MOD INC DEC DOT
+        ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
 
 %type <para_list>   para_list
 %type <argv_list>   argv_list
@@ -48,7 +50,8 @@ yyerror(char const *str)
         break_state continue_state
 %type <state_list>  state_list
 %type <block>       block
-%type <elif>       elif
+%type <elif>        elif
+%type <assign_operator> assign_operator
 
 %%
 
@@ -193,11 +196,38 @@ state_list
     ;
 
 expr
-    : l_expr ASSIGN expr
+	: logical_or_expr
+    | l_expr assign_operator expr
     {
-        $$ = zal_create_assign_expr($1, $3);
+        $$ = zal_create_assign_expr($1, $2, $3);
     }
-	| logical_or_expr
+    ;
+
+assign_operator
+    : ASSIGN
+    {
+        $$ = NORMAL_ASSIGN;
+    }
+    | ADD_ASSIGN_T
+    {
+        $$ = ADD_ASSIGN;
+    }
+    | SUB_ASSIGN_T
+    {
+        $$ = SUB_ASSIGN;
+    }
+    | MUL_ASSIGN_T
+    {
+        $$ = MUL_ASSIGN;
+    }
+    | DIV_ASSIGN_T
+    {
+        $$ = DIV_ASSIGN;
+    }
+    | MOD_ASSIGN_T
+    {
+        $$ = MOD_ASSIGN;
+    }
     ;
 
 condition

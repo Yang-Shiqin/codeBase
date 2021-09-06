@@ -6,7 +6,7 @@ int add(int argc, ...){
     int i, nArgValue;
     int sum=0;
     
-    va_start(arg_ptr, argc);    // 初始化va_list为参数列表, 第二个参数是可变参数第一个参数
+    va_start(arg_ptr, argc);    // 初始化va_list为参数列表, 第二个参数是可变参数第一个named参数(在栈?寄存器?里就是最后一个参数)
     for(i=0; i<argc; i++){
         nArgValue = va_arg(arg_ptr, int);   // 访问下一个参数, 大小为int
         sum += nArgValue;

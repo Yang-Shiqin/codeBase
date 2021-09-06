@@ -30,9 +30,10 @@ Expression* zal_create_null_expr(void){
     return expr;
 }
 
-Expression* zal_create_assign_expr(Expression *l_value, Expression *r_value){
+Expression* zal_create_assign_expr(Expression *l_value, AssignOperator oper, Expression *r_value){
     Expression *expr = zal_alloc_expr(ASSIGN_EXPRESSION);
     expr->u.assign_expr.l_value = l_value;
+    expr->u.assign_expr.operator = oper;
     expr->u.assign_expr.r_value = r_value;
     return expr;
 }
