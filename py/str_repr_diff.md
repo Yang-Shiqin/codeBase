@@ -1,15 +1,15 @@
-# diff between __str__ and __repr__
-- __str__: focus on readable
-- __repr__: focus on ambiguous
+# diff between `__str__` and `__repr__`
+- `__str__`: focus on readable
+- `__repr__`: focus on ambiguous
 
 ## 代码示例
 1. python的内置函数repr()和str()
-    - repr()就是通过__repr__这个特殊方法来得到object->str的
-    - str()和print()都可以得到__str__
+    - repr()就是通过`__repr__`这个特殊方法来得到object->str的
+    - str()和print()都可以得到`__str__`
 
 2. 同/关联
     - 都是生成一个对象的str表示
-    - 当__str__缺省时, __str__会调用__repr__ (str和repr输出相同)
+    - 当`__str__`缺省时, `__str__`会调用`__repr__` (str和repr输出相同)
 
 3. 异(例子)
     - str用于用户创建输出
@@ -20,13 +20,13 @@
     '4'
     >>> repr(x)
     '4'
-
+    
     >>> x = '4'
     >>> str(x)
     '4'
     >>> repr(x)
     "'4'"
-
+    
     >>> import datetime
     >>> d = datetime.datetime.now()
     >>> str(d)
@@ -36,9 +36,8 @@
     ```
 
 - 就是str()是把对象转换成str, repr()是用str把对象准确地表示出来
-- print(obj)的时候是要把对象转换成str, 所以也是__str__
+- print(obj)的时候是要把对象转换成str, 所以也是`__str__`
 
-重写__repr__还是打印str
 ```py
 class tmp():
     def __init__(self, name):
