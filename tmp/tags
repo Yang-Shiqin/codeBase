@@ -1,0 +1,49 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+A	test6.py	/^class A:$/;"	c
+B	test6.py	/^class B(A):$/;"	c
+C	test6.py	/^class C(A):$/;"	c
+D	test6.py	/^class D(B, C): $/;"	c
+PosInt1	test4.py	/^class PosInt1(int):$/;"	c
+PosInt2	test4.py	/^class PosInt2(int):$/;"	c
+__constants__	test5.py	/^    __constants__ = ['a']$/;"	v	class:foo
+__init__	test3.py	/^    def __init__(self, string):$/;"	m	class:strr
+__init__	test4.py	/^	def __init__(self, value):$/;"	m	class:PosInt1
+__init__	test5.py	/^    def __init__(self):$/;"	m	class:foo
+__new__	test4.py	/^	def __new__(cls, value):$/;"	m	class:PosInt2	file:
+a	hello.c	/^    int a;$/;"	m	struct:s	file:
+a	test.py	/^a = torch.tensor([1,2,3]).float()$/;"	v
+a	test2.py	/^a = '123'$/;"	v
+a	test3.py	/^a = strr("ysq")$/;"	v
+aaaa	hello.c	/^    int aaaa[0];$/;"	m	struct:s	file:
+b	hello.c	/^        int b;$/;"	m	union:s::__anon1	file:
+b	test5.py	/^b = foo()$/;"	v
+d	test6.py	/^    d = D() $/;"	v	class:D
+foo	test5.py	/^class foo():$/;"	c
+foo	test6.py	/^    def foo(self):$/;"	m	class:A
+foo	test6.py	/^    def foo(self):$/;"	m	class:C
+forward	test5.py	/^    def forward(self):$/;"	m	class:foo
+func	hello.c	/^struct s func(){$/;"	f
+func2	hello.c	/^struct s func2(){$/;"	f
+grid	tensorb.py	/^grid = torchvision.utils.make_grid(images)$/;"	v
+main	c/test.c	/^int main()$/;"	f
+main	c/test2.c	/^int main()$/;"	f
+main	hello.c	/^int main()$/;"	f
+model	tensorb.py	/^model = torchvision.models.resnet50(False)$/;"	v
+p	test4.py	/^p = PosInt1(-3)$/;"	v
+p2	test4.py	/^p2 = PosInt2(-3)$/;"	v
+s	hello.c	/^struct s{$/;"	s	file:
+strr	test3.py	/^class strr():$/;"	c
+sumstore	c/test1.c	/^void sumstore(long x, long y, long *dst){$/;"	f
+sumstore	c/test1.s	/^sumstore:$/;"	l
+t	test.py	/^t = Transformer()$/;"	v
+trainloader	tensorb.py	/^trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True)$/;"	v
+trainset	tensorb.py	/^trainset = datasets.MNIST('mnist_train', train=True, download=True, transform=transform)$/;"	v
+transform	tensorb.py	/^transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])$/;"	v
+u	hello.c	/^    }u;$/;"	m	struct:s	typeref:union:s::__anon1	file:
+writer	t7.py	/^writer = tf.summary.create_file_writer(".\/tmp\/mylogs")$/;"	v
+writer	tensorb.py	/^writer = SummaryWriter()$/;"	v
