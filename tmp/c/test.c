@@ -1,11 +1,12 @@
 #include <stdio.h>
 
+int func(int a){
+    return a+1;
+}
 int main()
-{   int a = 0;
-    int c = 1;
-    printf("%d", c);
-    a = c;
-    printf("Hello world\n");
-    return a;
+{   
+    int a=2;
+    func(a);
+    return 0;
 }
 
