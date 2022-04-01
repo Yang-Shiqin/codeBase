@@ -2,9 +2,9 @@
 # coding=utf-8
 import math
 import matplotlib.pyplot as plt 
-warm_up_iter = 10
+warm_up_iter = 5
 lr_min = 1e-7
-lr_max = 1
+lr_max = 1e-3
 T_max = 100
 
 lambda0 = lambda cur_iter: cur_iter / warm_up_iter if  cur_iter < warm_up_iter else \
