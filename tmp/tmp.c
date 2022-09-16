@@ -3,11 +3,11 @@
 
 int main()
 {
-    int a = 3;
-    int b = 4;
-    int ans = 0;
-    ans |= (a<b)<<1;
-    printf("%d, %f", ans, sqrt(3));
+    double a = 3.88;
+    char b = (char)a;
+    char c = (char)(int)a;
+    int d = (int) a;
+    printf("%d %d %d", b, c, d);
     return 0;
 }
 

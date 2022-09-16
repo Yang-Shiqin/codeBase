@@ -1,0 +1,36 @@
+body {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(36, 36, 36, 0);
+}
+
+/*1. 无动画*/
+#text1{
+  font-size:xx-large;
+  font-family: Arial,'Microsoft YaHei','黑体','宋体',sans-serif;
+  color: rgba(255, 29, 172, 0.804);
+  font-weight: 600;
+  position:fixed;
+  top:250px;
+  align-items: center;
+}
+
+#time{
+  font-size:xx-large;
+  font-family: Arial,'Microsoft YaHei','黑体','宋体',sans-serif;
+  color: rgba(255, 255, 255, 0.76);
+  font-weight: 500;
+  position:fixed;
+  top:10px;
+  align-items: center;
+}
+
+#text2{
+  position:fixed;
+  top:280px;
+  align-items: center;
+}
