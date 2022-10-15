@@ -463,3 +463,4 @@ typedef ZAL_Value (* ZAL_NativeFuncProc) (ZAL_Interpreter* inter, ZAL_LocalEnvir
 - 大括号(块代码)
 - 检查溢出
 - 1+0.5
+- 字符串常量都打印不出来
