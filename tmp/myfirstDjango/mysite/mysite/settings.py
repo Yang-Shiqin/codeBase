@@ -29,8 +29,9 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
+# 项目中启用的django
 INSTALLED_APPS = [
+    'polls.apps.PollsConfig',           # 用户自定义app
     'django.contrib.admin',             # 管理员站点
     'django.contrib.auth',              # 认证授权系统
     'django.contrib.contenttypes',      # 内容类型框架
@@ -49,7 +50,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'mysite.urls'
+ROOT_URLCONF = 'mysite.urls' # 根urlconf模块, 寻找其可用的urlpatterns并匹配每一条直到匹配成功. 当传入htttprequest有urlconf则代替该值
 
 TEMPLATES = [
     {
@@ -73,10 +74,12 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+# 数据库设置
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3', # 什么数据库
+        'NAME': BASE_DIR / 'db.sqlite3',    # 数据库名称
+        # 若不使用SQLite则还需要别的设置如USER、PASSWORD、HOST
     }
 }
 
