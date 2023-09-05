@@ -4,7 +4,7 @@ import requests
 from lxml import etree
 
 # 1. 指定url
-url = 'https://www.douban.com/'
+url = 'https://www.aqistudy.cn/historydata/'
 # UA伪装
 headers = {
     'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
@@ -21,16 +21,5 @@ e = etree.HTML(text)
 
 # etree都是返回list
 ############## 标签定位
-# 标签定位：绝对路径
-print(e.xpath('/html/head/title'))
-print(e.xpath('/html//title'))
-# 属性定位：
-print(e.xpath('//div[@class="title"]'))
-# 索引定位：
-print(e.xpath('//div[@class="title"]/a[1]'))
-
-############## 数据提取
-print(e.xpath('//div[@class="title"]/a[1]/text()'))
-# 获取标签中的属性值
-print(e.xpath('//div[@class="title"]/a[1]/@href'))
-
+name_list = e.xpath('//div[@class="container"]//div[@class="all"]//li/a/text()')
+print(name_list, len(name_list))
