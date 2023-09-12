@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <!-- META SECTION --><script src='/js/Gwork.js' type='text/javascript'></script><title>
+
+</title><meta content="text/html;charset=utf-8" http-equiv="Content-Type"/><meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/><meta name="referrer" content="always"/>
+    <!-- END META SECTION -->
+    <!-- CSS INCLUDE --><link rel="stylesheet" type="text/css" href="/js/hk/css/hk-style.css" /><link rel="stylesheet" type="text/css" href="/js/hk/css/mcustomscrollbar/jquery.mCustomScrollbar.css" /><link rel="stylesheet" type="text/css" href="/js/hk/css/swiper/swiper.min.css" />
+    <!-- EOF CSS INCLUDE --></head>
+<body>
+    <div class="page-container-wrap cl-after">
+        <!--侧边导航 START-->
+        <div class="page-nav-container animation-all-04s">
+            <div class="menu-user-info animation-all-04s">
+                <div class="menu-user-info-inside cl-after animation-all-04s">
+                    <div class="user-avatar-pic animation-all-04s">
+
+                    </div>
+                    <div class="user-info-details animation-all-04s">
+                        <div class="name-box">
+
+                        </div>
+                        <div class="number-box">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ul class="page-nav-list animation-all-04s">
+                <li class="nav-item active animation-all-04s">
+                    <a class="animation-all-04s" href="/Gstudent/Default1.aspx" arid="">
+                        <span class="nav-item-icon">
+                            <img class="nor-icon animation-all-04s " src="/js/hk/img/navicon/navicon_1.png" />
+                            <img class="act-icon animation-all-04s" src="/js/hk/img/navicon/navicon_act_1.png" />
+                        </span>
+                        <span class="nav-item-name">首页</span>
+                    </a>
+                </li>
+                <li class="nav-item animation-all-04s">
+                    <a class="animation-all-04s" arid="ToDo.aspx">
+                        <span id="spToNum" class="number-point animation-all-04s">
+                            </span>
+                        <span class="nav-item-icon">
+                            <img class="nor-icon animation-all-04s" src="/js/hk/img/navicon/navicon_2.png" />
+                            <img class="act-icon animation-all-04s" src="/js/hk/img/navicon/navicon_act_2.png" />
+                        </span>
+                        <span class="nav-item-name">待办</span>
+                    </a>
+                </li>
+                <li class="nav-item animation-all-04s">
+                    <a class="animation-all-04s" arid="ToHelp.aspx">
+                        <span class="nav-item-icon">
+                            <img class="nor-icon animation-all-04s" src="/js/hk/img/navicon/navicon_3.png" />
+                            <img class="act-icon animation-all-04s" src="/js/hk/img/navicon/navicon_act_3.png" />
+                        </span>
+                        <span class="nav-item-name">帮助</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="commonly-used-apps">
+                <div class="commonly-used-apps-title">
+                    常用<font>应用</font>
+                </div>
+                <ul id="ulMenu" class="page-nav-list type-2 animation-all-04s" style="">
+                </ul>
+            </div>
+            <div class="signout-btn-box">
+                <a class="signout-btn" href="/ULoginST.aspx?exit=1"><span>退出</span></a>
+            </div>
+        </div>
+        <!--侧边导航 END-->
+        <div class="page-main-body animation-all-04s homepage-mod" style="background-image: url(/js/hk/img/bg/page_bg_home.png);">
+            <iframe id="iframe" name="iframe0" width="100%" height="100%" data-id="./main.html" src="Home.aspx" frameborder="0" seamless></iframe>
+        </div>
+    </div>
+    <script type="text/javascript" src="/js/hk/js/plugin/jquery/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/hk/js/plugin/mcustomscrollbar/jquery.mCustomScrollbar.min.js"></script>
+    <script type="text/javascript" src="/js/hk/js/plugin/mcustomscrollbar/jquery.mousewheel.min.js"></script>
+
+    <script type="text/javascript" src="/js/hk/js/plugin/swiper/swiper.jquery.min.js"></script>
+
+    <script>
+        var TabSwiper = new Swiper('.panel-icon-tab-outside', {
+            slidesPerView: 'auto',
+            freeMode: true,
+        })
+        $(".page-content-wrap").mCustomScrollbar({
+            axis: "y", // horizontal scrollbar
+            alwaysShowScrollbar: 0,
+            theme: "minimal-dark",
+            scrollInertia: 10,
+            scrollEasing: "easeOutCirc",
+        });
+        $(".page-menu-container").mCustomScrollbar({
+            axis: "y", // horizontal scrollbar
+            alwaysShowScrollbar: 0,
+            theme: "minimal-dark",
+            scrollInertia: 10,
+            scrollEasing: "easeOutCirc",
+        });
+        $(".page-nav-list.type-2").mCustomScrollbar({
+            axis: "y", // horizontal scrollbar
+            alwaysShowScrollbar: 0,
+            theme: "minimal-dark",
+            scrollInertia: 10,
+            scrollEasing: "easeOutCirc",
+        });
+        //菜单折叠展开 START
+        $(".page-nav-container").on('mouseenter', function () {
+            if ($(this).closest(".page-container-wrap").hasClass("page-nav-unfold")) { } else {
+                $(this).closest(".page-container-wrap").addClass("page-nav-unfold")
+            }
+        })
+        $(".page-nav-container").on('mouseleave', function () {
+
+            if ($(this).closest(".page-container-wrap").hasClass("page-nav-unfold")) {
+                $(this).closest(".page-container-wrap").removeClass("page-nav-unfold")
+            } else {
+
+            }
+        })            //菜单折叠展开 END
+    </script>
+    <script type="text/javascript">
+        $(function () {
+            $('.animation-all-04s a').click(function () {
+                var id = $(this).attr('arid');
+                document.getElementById("iframe").setAttribute("src", id);
+            })
+        });
+    </script>
+</body>
+</html>

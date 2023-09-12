@@ -3,7 +3,7 @@
 import json
 import requests
 from lxml import etree
-from helper import mkdir
+from utils import mkdir
 # 解析彼岸图网4K动漫图片并下载
 
 # 1. 指定url

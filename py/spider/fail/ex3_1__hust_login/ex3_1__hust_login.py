@@ -4,17 +4,30 @@
 import requests
 from lxml import etree
 from utils import mkdir
-
+# 研究生系统（hub系统有点难，似乎还有握手挥手那个号，而且不知道哪个请求）
+# code为验证码https://pass.hust.edu.cn/cas/code
+# login开头的为登录请求，ul应该是username加密后，pl应该是password加密后（每次不一样）
+#   lt每次也不一样
+#   https://pass.hust.edu.cn/cas/login?service=http%3A%2F%2Fyjspy.hust.edu.cn%2FULoginST.aspx
 # 1. 指定url
-url = 'https://sc.chinaz.com/jianli/free.html'
+url = 'https://pass.hust.edu.cn/cas/login'
 # UA伪装
 headers = {
     'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
             ' AppleWebKit/537.36 (KHTML, like Gecko)'
             ' Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.54'
 }
+params = {
+    'ul'    :,
+    'pl'    :,
+    'code'  : input('验证码：'),
+    'phoneCode' :'',
+    'lt'    :,
+    'execution' :'e3s1',
+    '_eventId'  :'submit',
+}
 # 2. 发起请求(get)
-response = requests.get(url=url, headers=headers)
+response = requests.post(url=url, headers=headers, data=params)
 # 3. 获取响应数据
 print(response.status_code)
 text = response.text

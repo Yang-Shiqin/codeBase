@@ -3,7 +3,7 @@
 # 爬取诗词名句网的三国演义每章的标题和内容
 import requests
 from bs4 import BeautifulSoup
-from helper import mkdir
+from utils import mkdir
 
 
 if __name__ == "__main__":
