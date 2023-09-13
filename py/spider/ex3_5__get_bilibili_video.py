@@ -1,32 +1,130 @@
 #!/usr/bin/env python
 # coding=utf-8
+import re
 import requests
 import time
-from multiprocessing.dummy import Pool
 from lxml import etree
+from multiprocessing.dummy import Pool
 from utils import mkdir
 
 start_time = time.time()
 
 class Bili:
     def __init__(self):
+        # 根url，即b站首页
         self.root_url = 'https://www.bilibili.com/'
-        self.playurl = 'https://api.bilibili.com/x/player/playurl'
+        # 获取特定视频下载链接api，要加params
+        self.play_url = 'https://api.bilibili.com/x/player/playurl'
+        # 获取视频搜索结果的信息api（包含avid、bvid、详情页url、名字，不含cid
+        self.search_url = ('https://api.bilibili.com/x/web-interface/search/type'
+                        '?jsonp=jsonp&search_type=video&keyword={}&page={}')
+        # 根据bvid获取cid的api
+        self.pagelist_url = ('https://api.bilibili.com/x/player/pagelist?'
+                        'bvid={}&jsonp=jsonp')
         self.headers = {
             'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
             ' AppleWebKit/537.36 (KHTML, like Gecko)'
             ' Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.54'
         }
+        # 创建会话对象
+        self.session = requests.Session()
+        self.session.headers.update(self.headers)
+        # 第一次get获取cookie，不然后面可能会失败（忘了是这个原因还是page=0失败
+        self.session.get(self.root_url)
         
+    # 根据搜索keyword下载从前开始page页的视频
+    # asy==1为异步(线程池)，否则串行
+    def download_search(self, keyword, page=1, asy=1):
+        bvid_list, name_list, cid_list = self.get_all_search_info(keyword, page)
+        #print(bvid_list, name_list, cid_list)
+        #print(len(bvid_list), len(name_list), len(cid_list))
+        assert(len(bvid_list)==len(name_list)==len(cid_list))
+        l = len(bvid_list)
+        info = [(bvid_list[i], name_list[i], cid_list[i]) for i in range(l)]
+        if asy:
+            # 实例化线程池
+            pool = Pool(10)
+            # 每个url传给get_content, 每个线程同时运行get_content
+            pool.map(self.download_one, info)
+        else:
+            for i in info:
+                self.download_one(i)
 
-    def get_content(self, url, headers, content_type):
-        print(url)
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            if content_type=='content':
-                return response.content
-            else:
-                return response.text
+    # 根据info下载一个视频
+    # info为tuple(bvid, name, cid)
+    def download_one(self, info):
+        bvid, name, cid = info
+        if bvid=='' or bvid==None or cid==0: return
+        params = {                       
+            'bvid'  : bvid,    
+            'qn'    : 64,                
+            'cid'   : cid[0],        
+            'platform'  : 'html5',       
+            'high_quality'  : 1,         
+        }                                
+        # 没分p的视频
+        if len(cid)==1:
+            response = self.session.get(self.play_url,params=params).json()
+            url = response['data']['durl'][0]['url']
+            content = self.session.get(url).content
+            with open(f'data/bilibili/{name}.mp4', 'wb') as f:
+                f.write(content)
+            print(f'{name} download finished!')
+            return 
+        # 分p的视频, 目前命名方式是title_下标，没用分p的标题
+        for i, icid in enumerate(cid):
+            try:
+                params['cid'] = icid
+                response = self.session.get(self.play_url,params=params).json()
+                url = response['data']['durl'][0]['url']
+                content = self.session.get(url).content
+                with open(f'data/bilibili/{name}_{i}.mp4', 'wb') as f:
+                    f.write(content)
+                print(f'{name}_{i} download finished!')
+            except:
+                print(f'{name} download fail!!')
+                continue
+
+    # 根据keyword和page返回bvid、name、cid的list
+    def get_all_search_info(self, keyword, page=1):
+        bvid_list = []
+        name_list = []
+        pattern = '<em class=(.*)</em>' # 去除标记搜索的标签
+        #self.session.headers.update(self.search_headers)
+        for i in range(page):
+            url = self.search_url.format(keyword, i+1)
+            data = self.session.get(url).json()
+            if data['code']==-400 or data['code']==-403 or data['code']==-404:
+                print('data is None!!可能请求被拦截')
+                return [],[],[]
+            result_list = data['data']['result']
+            for j in result_list:
+                bvid_list.append(j['bvid'])
+                name_list.append(re.sub(pattern, keyword, j['title'])) 
+        cid_list = self.get_cid(bvid_list)
+        return bvid_list, name_list, cid_list
+
+    # 根据bvid获取cid(不知道为啥用avid获取会失败)
+    # 返回：
+    #   bvid为数，则返回一维数组（多p会有多个cid
+    #   bvid为数组，则返回二维数组（多p会有多个cid
+    def get_cid(self, bvid):
+        cid_list = []
+        if isinstance(bvid, str):
+            data = self.session.get(self.pagelist_url.format(bvid)).json()['data']
+            cid_list = [di['cid'] for di in data]
+        else:
+            for i in bvid:
+                print(self.pagelist_url.format(i))
+                data = self.session.get(self.pagelist_url.format(i)).json()
+                if data['code']<=-400:
+                    print('cid get err')
+                    cid_list.append(0)
+                    continue
+                data = data['data']
+                cid_list.append([di['cid'] for di in data])
+        return cid_list
+
 
     # 爬取特定的一个视频的例子，是小拉泽的一个零食视频（因为没登陆所以码率较低
     def example(self):
@@ -37,35 +135,18 @@ class Bili:
             'platform'  : 'html5',
             'high_quality'  : 1,
         }
-        session = requests.Session()
-        session.headers.update(self.headers)
-        response = session.get(self.playurl,params=params).json()
+        response = self.session.get(self.play_url,params=params).json()
         durl = response['data']['durl']
         for i in durl:
             url = i['url']
             print(url)
             name = url.split('?')[0].split('/')[-1]
-            content = session.get(url).content
+            content = self.session.get(url).content
             with open(f'data/bilibili/{name}', 'wb') as f:
                 f.write(content)
 
 b = Bili()
-b.example()
-#e = etree.HTML(text)
-#
-## etree都是返回list
-############### 标签定位
-#video_list = e.xpath('//*[@id="i_cecream"]/div[2]/main/div[2]/div/div[1]/div/div/div[2]/a/@href')
-#print(video_list)
-#mkdir('data/bilibili')
-#video_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.167 Safari/537.36',
-#			'Accept-Language': 'zh-CN,zh;q=0.9',
-#			'Accept-Encoding': 'gzip, deflate, br',
-#			'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'}
-#
-#pool = Pool(10)
-## 实例化线程池
-## 每个url传给get_content, 每个线程同时运行get_content
-#content = pool.map(get_content, video_list)
-#end_time=time.time()
-#print(end_time-start_time)
+#b.example()
+b.download_search('你好')
+end_time = time.time()
+print(f'used time: {end_time-start_time}s.')
