@@ -2,15 +2,20 @@
 # coding=utf-8
 import re
 import requests
+import sys
 import time
-from lxml import etree
+from loguru import logger
 from multiprocessing.dummy import Pool
-from utils import mkdir
+from pathlib import Path
 
 start_time = time.time()
+logger.remove()
+logger.add(sys.stderr, level='INFO')
 
 class Bili:
     def __init__(self):
+        # 保存视频到该文件夹下
+        self.save_dir = Path('./data/bilibili').absolute()
         # 根url，即b站首页
         self.root_url = 'https://www.bilibili.com/'
         # 获取特定视频下载链接api，要加params
@@ -36,8 +41,9 @@ class Bili:
     # asy==1为异步(线程池)，否则串行
     def download_search(self, keyword, page=1, asy=1):
         bvid_list, name_list, cid_list = self.get_all_search_info(keyword, page)
-        #print(bvid_list, name_list, cid_list)
-        #print(len(bvid_list), len(name_list), len(cid_list))
+        logger.debug('bvid_list:{}\nname_list:{}\ncid_list:{}', 
+                     bvid_list, name_list, cid_list)
+        logger.debug('len:{},{},{}', len(bvid_list), len(name_list), len(cid_list))
         assert(len(bvid_list)==len(name_list)==len(cid_list))
         l = len(bvid_list)
         info = [(bvid_list[i], name_list[i], cid_list[i]) for i in range(l)]
@@ -62,14 +68,16 @@ class Bili:
             'platform'  : 'html5',       
             'high_quality'  : 1,         
         }                                
+        if not self.save_dir.exists():
+            self.save_dir.mkdir()
         # 没分p的视频
         if len(cid)==1:
             response = self.session.get(self.play_url,params=params).json()
             url = response['data']['durl'][0]['url']
             content = self.session.get(url).content
-            with open(f'data/bilibili/{name}.mp4', 'wb') as f:
+            with open(self.save_dir / f'{name}.mp4', 'wb') as f:
                 f.write(content)
-            print(f'{name} download finished!')
+            logger.info(f'{name} download finished!')
             return 
         # 分p的视频, 目前命名方式是title_下标，没用分p的标题
         for i, icid in enumerate(cid):
@@ -78,11 +86,11 @@ class Bili:
                 response = self.session.get(self.play_url,params=params).json()
                 url = response['data']['durl'][0]['url']
                 content = self.session.get(url).content
-                with open(f'data/bilibili/{name}_{i}.mp4', 'wb') as f:
+                with open(self.save_dir / f'{name}_{i}.mp4', 'wb') as f:
                     f.write(content)
-                print(f'{name}_{i} download finished!')
+                logger.info(f'{name}_{i} download finished!')
             except:
-                print(f'{name} download fail!!')
+                logger.warning(f'{name} download fail!!')
                 continue
 
     # 根据keyword和page返回bvid、name、cid的list
@@ -95,7 +103,7 @@ class Bili:
             url = self.search_url.format(keyword, i+1)
             data = self.session.get(url).json()
             if data['code']==-400 or data['code']==-403 or data['code']==-404:
-                print('data is None!!可能请求被拦截')
+                logger.warning('data is None!!可能请求被拦截')
                 return [],[],[]
             result_list = data['data']['result']
             for j in result_list:
@@ -115,10 +123,10 @@ class Bili:
             cid_list = [di['cid'] for di in data]
         else:
             for i in bvid:
-                print(self.pagelist_url.format(i))
+                logger.debug(self.pagelist_url.format(i))
                 data = self.session.get(self.pagelist_url.format(i)).json()
                 if data['code']<=-400:
-                    print('cid get err')
+                    logger.warning('cid get err')
                     cid_list.append(0)
                     continue
                 data = data['data']
@@ -137,16 +145,18 @@ class Bili:
         }
         response = self.session.get(self.play_url,params=params).json()
         durl = response['data']['durl']
+        if not self.save_dir.exists():
+            self.save_dir.mkdir()
         for i in durl:
             url = i['url']
-            print(url)
+            logger.debug(url)
             name = url.split('?')[0].split('/')[-1]
             content = self.session.get(url).content
-            with open(f'data/bilibili/{name}', 'wb') as f:
+            with open(self.save_dir / f'{name}', 'wb') as f:
                 f.write(content)
 
 b = Bili()
 #b.example()
 b.download_search('你好')
 end_time = time.time()
-print(f'used time: {end_time-start_time}s.')
+logger.info(f'used time: {end_time-start_time}s.')
