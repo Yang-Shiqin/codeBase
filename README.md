@@ -2,8 +2,8 @@
 <!--START_SECTION:waka-->
 
 ```txt
-Other       5 hrs 18 mins   █████████████████████████   99.92 %
-PkgConfig   0 secs          ░░░░░░░░░░░░░░░░░░░░░░░░░   00.08 %
+Other       3 hrs 55 mins   █████████████████████████   99.89 %
+PkgConfig   0 secs          ░░░░░░░░░░░░░░░░░░░░░░░░░   00.11 %
 ```
 
 <!--END_SECTION:waka-->
