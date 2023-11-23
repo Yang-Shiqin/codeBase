@@ -26,6 +26,9 @@
 ├── ex3_2__agent.py                 # request代理(但是不行)
 ├── ex3_3__asy_pool.py              # 异步请求，用线程池request b站主页视频详情页内容
 ├── ex3_4__asy_pool_bilibili.py     # 异步请求，用线程池request b站主页视频详情页中视频链接下载（不知道是啥的链接，而且经常403失败，而且下下来的视频不一定能看
+├── ex3_5__get_bilibili_video.py    # 异步请求，线程池request b站搜索的视频，批量下载，写得比较完整
+├── ex3_6__asy_co.py                # 协程爬b站（现在用的是同步操作所以慢，还没改好
+├── ex3_7__aiohtttp.py              # aiohttp库示例
 ├── ex4_1__selenium.py              # 网页自动化测试库selenium小示例
 ├── ex4_2__selenium_login.py        # selenium登录有验证码的古诗文网
 ├── fail                            # 失败合辑
