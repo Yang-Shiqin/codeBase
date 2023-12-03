@@ -12,6 +12,7 @@ if __name__ == "__main__":
     option = webdriver.EdgeOptions()
     option.add_experimental_option("excludeSwitches", ["enable-automation"])
     option.add_experimental_option("detach", True)
+    print('sd')
     
     driver = webdriver.Edge(options=option)
     driver.get(url)
