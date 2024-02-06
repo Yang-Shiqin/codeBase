@@ -8,6 +8,31 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
+"""tldr
+1. model
+    1. 继承nn.Module
+    2. 定义网络结构
+    3. 定义前向传播
+2. data
+    1. 下载数据集
+    2. 数据预处理
+    3. 划分数据集
+    4. 生成DataLoader
+3. train/val
+    - 组成
+        1. model
+        2. data
+        3. optimizer
+        4. loss
+    - 过程
+        1. for epoch(每轮迭代整个数据集)
+        2. for batch(每批迭代数据集的一块)
+        3. forward
+        4. cal loss
+        5. loss.backward()(计算权重)
+        6. optimizer.step()(更新权重)
+"""
+
 class LeNet(nn.Module):     # 继承pytorch网络基类(这个是所有网络的基类)
     def __init__(self, Cin, H, W, K):
         """初始化LeNet网络结构和权重
@@ -45,7 +70,7 @@ class LeNet(nn.Module):     # 继承pytorch网络基类(这个是所有网络的
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, x):
+    def forward(self, x):   # nn.Module的子类必须重写forward函数
         """前向传播，计算输入样本每个分类得分
         参数:
             x: 输入样本, 大小为(N, Cin, H, W)
@@ -56,7 +81,7 @@ class LeNet(nn.Module):     # 继承pytorch网络基类(这个是所有网络的
         score = self.net(x)
         return score
 
-    def predict(self, x):
+    def predict(self, x):   # 自己的函数
         """预测输入样本类别
         参数:
             x: 输入样本, 大小为(N, Cin, H, W)
@@ -83,10 +108,11 @@ def get_mnist(batch_size_train=64, batch_size_test=64):
         transforms.Normalize([0.1307],[0.3081]),    # 标准化, 0.1307和0.3081分别是mnist的均值和标准差
     ])
 
+    # 1. 下载数据集
     # 设置dataset
     train_val_dataset = datasets.MNIST(
         root = "./data/",
-        transform=transform,
+        transform=transform,    # 2. 数据预处理
         train = True,
         download = True
     )
@@ -96,13 +122,14 @@ def get_mnist(batch_size_train=64, batch_size_test=64):
         train = False
     )
 
+    # 3. 划分数据集为训练集和验证集(和测试集)
     # 将训练集划分为训练集和验证集
     train_dataset, val_dataset = random_split(
         train_val_dataset, 
         [len(train_val_dataset)-int(len(train_val_dataset)//6), int(len(train_val_dataset)//6)]
     )
 
-    # 生成DataLoader
+    # 4. 生成DataLoader
     loader_train = DataLoader(
         dataset=train_dataset,
         batch_size = batch_size_train,

@@ -1,0 +1,1 @@
+map用法与slice类似。slice类似数组，map是哈希的key-value

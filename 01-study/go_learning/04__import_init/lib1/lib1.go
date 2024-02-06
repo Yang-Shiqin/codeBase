@@ -3,7 +3,7 @@ package lib1        // 一般包名和文件名同名，好找(文件名不重�
 import "fmt"
 
 func Lib1Test(){    // 大写才可见
-    fmt.Println("lib1Test())")
+    fmt.Println("lib1Test()")
 }
 
 func init(){
