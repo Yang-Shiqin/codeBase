@@ -13,9 +13,10 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
 # 一行计时器组件
-class Line(QWidget):
-    def __init__(self, parent=None):
+class TimerLine(QWidget):
+    def __init__(self, parent=None, id=0):
         super().__init__(parent)
+        self.id = id    # 任务id
         self.time = QTime(0,0,0)
         self.end_time = QTime(0,0,0)
         self.state = 0  # 0: 暂停, 1: 启动
@@ -50,6 +51,7 @@ class Line(QWidget):
         self.pause.setObjectName(u"pause")
         self.pause.setFixedWidth(35)
         self.horizontalLayout.addWidget(self.pause)
+        self.horizontalLayout.setMargin(0)
         self.pause.clicked.connect(self.pause_resume_time)    # 连接信号和槽
 
         self.timer.setText(u"00:00:00")
@@ -63,6 +65,7 @@ class Line(QWidget):
         self.time = QTime(0,0,0)
         self.state = 0
         self.timer.setText(self.time.toString('hh:mm:ss'))
+        self.pause.setText(self.pause_icon[self.state])
 
     # 暂停/启动计时
     def pause_resume_time(self):
@@ -73,6 +76,15 @@ class Line(QWidget):
         else:   # 启动
             self.end_time = QDateTime.currentDateTime()
         self.pause.setText(self.pause_icon[self.state])
+
+    # 总按钮暂停计时
+    def pause_time(self, id):
+        if id == self.id:   # id相等则不暂停
+            return
+        if self.state == 1:
+            self.state = 0
+            self.time = self.time.addMSecs(self.end_time.msecsTo(QDateTime.currentDateTime()))
+            self.pause.setText(self.pause_icon[self.state])
 
     def show_time(self):
         if self.state == 1:
