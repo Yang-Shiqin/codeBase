@@ -4,6 +4,7 @@
 import sys
 from PySide2.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from line import TimerLine
+from db_page import DBPage
 
 class Window(QMainWindow):
     """Main window."""
@@ -14,15 +15,23 @@ class Window(QMainWindow):
         self.vLayout = QVBoxLayout()
         self.create_button = QPushButton('Create timer')
         self.pause_button = QPushButton('Pause all')
+        self.db_show_button = QPushButton('db page')
         self.hLayout.addWidget(self.create_button)
         self.hLayout.addWidget(self.pause_button)
+        self.vLayout.addWidget(self.db_show_button)
         self.vLayout.addLayout(self.hLayout)
         self.create_button.clicked.connect(self.create_timer)
+        self.db_show_button.clicked.connect(self.create_db_page)
         container = QWidget()
         container.setLayout(self.vLayout)
         self.setCentralWidget(container)
         self.timer_lines = []
         self.id = 0
+
+    def create_db_page(self):
+        widget = DBPage()
+        widget.resize(700, 400)
+        widget.exec_()
 
     def create_timer(self):
         widget = TimerLine(self, self.id)
@@ -39,5 +48,6 @@ class Window(QMainWindow):
 # Create the application
 app = QApplication(sys.argv)
 w = Window()
+w.resize(380, 100)
 w.show()
 app.exec_()

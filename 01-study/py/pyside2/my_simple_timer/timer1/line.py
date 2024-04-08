@@ -12,10 +12,14 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
+from stdb import STDB
+
 # 一行计时器组件
 class TimerLine(QWidget):
     def __init__(self, parent=None, id=0):
         super().__init__(parent)
+        self.db = STDB()
+        self.db_data = {}
         self.id = id    # 任务id
         self.time = QTime(0,0,0)
         self.end_time = QTime(0,0,0)
@@ -52,7 +56,7 @@ class TimerLine(QWidget):
         self.pause.setFixedWidth(35)
         self.horizontalLayout.addWidget(self.pause)
         self.pause.clicked.connect(self.pause_resume_time)    # 连接信号和槽
-
+    
         # 删除按钮
         self.delete = QPushButton()
         self.delete.setObjectName(u"delete")
@@ -69,11 +73,11 @@ class TimerLine(QWidget):
 
     # 完成，时间归零
     def clear_time(self):
-        # TODO: 保存时间到数据库
+        self.pause_time(-1)
+        self.db_data['duration'] = QTime(0,0,0).msecsTo(self.time)
+        self.db.insert(self.db_data)
         self.time = QTime(0,0,0)
-        self.state = 0
         self.timer.setText(self.time.toString('hh:mm:ss'))
-        self.pause.setText(self.pause_icon[self.state])
 
     # 暂停/启动计时
     def pause_resume_time(self):
@@ -101,7 +105,8 @@ class TimerLine(QWidget):
 
     def on_return_pressed(self):
         self.job_name.setEnabled(False)
-        print(self.job_name.text())
+        self.db_data['name'] = self.job_name.text()
+        self.db_data['create_time'] = QDateTime.currentDateTime().toString('yyyy-MM-dd hh:mm:ss')
 
     def delete_all(self):
         self.timer_.stop()
