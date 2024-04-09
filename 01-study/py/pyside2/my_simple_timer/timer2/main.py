@@ -30,7 +30,7 @@ class Window(QMainWindow):
 
     def create_db_page(self):
         widget = DBPage()
-        widget.resize(700, 400)
+        widget.resize(900, 350)
         widget.exec_()
 
     def create_timer(self):
@@ -48,6 +48,6 @@ class Window(QMainWindow):
 # Create the application
 app = QApplication(sys.argv)
 w = Window()
-w.resize(380, 100)
+w.resize(350, 100)
 w.show()
 app.exec_()

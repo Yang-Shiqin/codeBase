@@ -25,7 +25,7 @@ class DBPage(QDialog):
         self.times = [None, None]
         self.time_index = 0
         self.tab_widget = []
-        self.view_func = [self.table_html, self.bar_html, self.pie_html]
+        self.view_func = [self.table_html, self.line_html, self.pie_html]
         self.setupUi()
         self.tabWidget.currentChanged['int'].connect(self.show_db_html)
         self.db = STDB()
@@ -43,35 +43,26 @@ class DBPage(QDialog):
         self.tabWidget.addTab(tab1_table, "")
         self.tab_widget.append(tab1_table)
         ## 添加页2
-        tab2_bar = QWebEngineView()
-        tab2_bar.setObjectName(u"bar")
-        self.tabWidget.addTab(tab2_bar, "")
-        self.tab_widget.append(tab2_bar)
+        tab2_line = QWebEngineView()
+        tab2_line.setObjectName(u"line")
+        self.tabWidget.addTab(tab2_line, "")
+        self.tab_widget.append(tab2_line)
         ## 添加页3
         tab3_pie = QWebEngineView()
         tab3_pie.setObjectName(u"pie")
         self.tabWidget.addTab(tab3_pie, "")
         self.tab_widget.append(tab3_pie)
 
-        self.horizontalLayout.addWidget(self.tabWidget, 2)
-
-        self.verticalLayout = QVBoxLayout()
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.comboBox = QComboBox()
-        self.comboBox.setObjectName(u"comboBox")
-
-        self.verticalLayout.addWidget(self.comboBox)
-
+        # 日历组件
         self.cal =  QCalendarWidget(self)
         self.cal.setGridVisible(True)
-        self.cal.resize(200, 200)
         self.cal.clicked[QDate].connect(self.set_time)
-        self.verticalLayout.addWidget(self.cal)
 
-        self.horizontalLayout.addLayout(self.verticalLayout, 1)
+        self.horizontalLayout.addWidget(self.tabWidget, 2)
+        self.horizontalLayout.addWidget(self.cal, 1)
 
         self.tabWidget.setTabText(self.tabWidget.indexOf(tab1_table), QCoreApplication.translate("Dialog", u"table", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(tab2_bar), QCoreApplication.translate("Dialog", u"bar", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(tab2_line), QCoreApplication.translate("Dialog", u"line", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(tab3_pie), QCoreApplication.translate("Dialog", u"pie", None))
 
         self.tabWidget.setCurrentIndex(0)
@@ -105,7 +96,7 @@ class DBPage(QDialog):
         self.show_db_html(self.tabWidget.currentIndex())
         self.color_time(Qt.yellow)
 
-    # 展示tab视图（先展示所有，后面再加条件筛选）
+    # 展示tab视图, 有时间和任务名筛选条件(但后来没有实现任务名筛选，因为pyechart自带)
     def show_db_html(self, index):
         if self.times[0] and self.times[1]:
             if self.times[0] == self.times[1]:  # 两个选同一天是取消筛选
@@ -141,8 +132,8 @@ class DBPage(QDialog):
         html += '</table>'
         return html
     
-    # 每个任务一条线，横坐标为日期，纵坐标为时长（TODO: 目前就考虑开始日期，不考虑跨天）
-    def bar_html(self, data):
+    # 每个任务一条线，横坐标为日期，纵坐标为时长
+    def line_html(self, data):
         # 获取每个任务每天的时长
         each_job = {}
         for item in data:
@@ -165,9 +156,10 @@ class DBPage(QDialog):
         y_data = [[job.get(day, 0) for day in days] for job in each_job.values()]
 
         line=(
-            Line(init_opts=opts.InitOpts(width="400px", height="300px"))
+            Line(init_opts=opts.InitOpts(width="500px", height="250px"))
             .add_xaxis(xaxis_data=list(days))
-            .set_global_opts(title_opts=opts.TitleOpts(title="每日任务时长"))
+            .set_global_opts(title_opts=opts.TitleOpts(title="每日任务时长"),
+                legend_opts=opts.LegendOpts(type_="scroll", pos_left="right", orient="vertical"))
         )
         for name, data in zip(names, y_data):   # 每个任务一条线
             line.add_yaxis(series_name=name, y_axis=data)
@@ -184,13 +176,17 @@ class DBPage(QDialog):
             else:
                 sums[name] = duration
         content = [[key, value] for key, value in sums.items()]
+        if not content:
+            content = [("", 0)]
         pie = (
-            Pie(init_opts=opts.InitOpts(width="400px", height="300px"))
-            .add("", content)
-            .set_global_opts(title_opts=opts.TitleOpts(title="单任务总时长"))
+            Pie(init_opts=opts.InitOpts(width="500px", height="250px"))
+            .add("", content, center=["50%", "50%"])
+            .set_global_opts(title_opts=opts.TitleOpts(title="单任务总时长"),
+                legend_opts=opts.LegendOpts(type_="scroll", pos_left="right", orient="vertical"))
             .set_series_opts(label_opts=opts.LabelOpts(formatter=JsCode("""
             function(params){
-                var seconds = params.value;
+                var mseconds = params.value;
+                var seconds = Math.floor(mseconds / 1000);
                 var hours = Math.floor(seconds / 3600);
                 var minutes = Math.floor((seconds % 3600) / 60);
                 var seconds = seconds % 60;
