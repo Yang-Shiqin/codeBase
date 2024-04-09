@@ -21,6 +21,9 @@ from datetime import datetime
 class DBPage(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.names = set()
+        self.times = [None, None]
+        self.time_index = 0
         self.tab_widget = []
         self.view_func = [self.table_html, self.bar_html, self.pie_html]
         self.setupUi()
@@ -59,11 +62,11 @@ class DBPage(QDialog):
 
         self.verticalLayout.addWidget(self.comboBox)
 
-        self.horizontalSlider = QSlider()
-        self.horizontalSlider.setObjectName(u"horizontalSlider")
-        self.horizontalSlider.setOrientation(Qt.Horizontal)
-
-        self.verticalLayout.addWidget(self.horizontalSlider)
+        self.cal =  QCalendarWidget(self)
+        self.cal.setGridVisible(True)
+        self.cal.resize(200, 200)
+        self.cal.clicked[QDate].connect(self.set_time)
+        self.verticalLayout.addWidget(self.cal)
 
         self.horizontalLayout.addLayout(self.verticalLayout, 1)
 
@@ -73,12 +76,50 @@ class DBPage(QDialog):
 
         self.tabWidget.setCurrentIndex(0)
 
-        # QMetaObject.connectSlotsByName()
-    # setupUi
+    # 给筛选日期上色
+    def color_time(self, color=Qt.yellow):
+        if not self.times[0] or not self.times[1]:
+            return
+        else:
+            start = int(self.times[0]>self.times[1])
+            start_date = self.times[start]
+            end_date = self.times[start^1]
+
+        # 设置日期文本格式
+        date_format = self.cal.dateTextFormat(start_date)
+        date_format.setBackground(color)
+        self.cal.setDateTextFormat(start_date, date_format)
+
+        # 将日期范围内的日期设置为突出显示的格式
+        current_date = start_date
+        while current_date < end_date:
+            current_date = current_date.addDays(1)
+            date_format = self.cal.dateTextFormat(current_date)
+            date_format.setBackground(color)
+            self.cal.setDateTextFormat(current_date, date_format)
+
+    def set_time(self, data):  # 选择日期(目前是单天)
+        self.color_time(Qt.white)
+        self.times[self.time_index] = data
+        self.time_index = self.time_index ^ 1
+        self.show_db_html(self.tabWidget.currentIndex())
+        self.color_time(Qt.yellow)
 
     # 展示tab视图（先展示所有，后面再加条件筛选）
     def show_db_html(self, index):
-        data = self.db.query_all()
+        if self.times[0] and self.times[1]:
+            if self.times[0] == self.times[1]:  # 两个选同一天是取消筛选
+                self.times = [None, None]
+            else:
+                start = int(self.times[0]>self.times[1])
+        if not self.names and (not self.times[0] or not self.times[1]): # 没有筛选条件
+            data = self.db.query_all()
+        elif not self.names: # 只有时间筛选条件
+            data = self.db.query_by_time(self.times[start].toString('yyyy-MM-dd'), self.times[start^1].toString('yyyy-MM-dd'))
+        elif not self.self.times[0] and not self.self.times[1]: # 只有任务筛选条件
+            data = self.db.query_by_names(self.names)
+        else:   # 两个条件都有
+            data = self.db.query_by_names_and_time(self.names, self.times[start].toString('yyyy-MM-dd'), self.times[start^1].toString('yyyy-MM-dd'))
         html = self.view_func[index](data)
         self.tab_widget[index].setHtml(html)
 
