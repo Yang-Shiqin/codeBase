@@ -11,7 +11,7 @@ class MainWindow(QMainWindow):
 
         button = QPushButton("Press Me!")
         button.setCheckable(True)
-        button.clicked.connect(self.the_button_was_clicked)
+        button.clicked.connect(self.the_button_was_clicked)     # 把clicked信号与槽函数连接
         button.clicked.connect(self.the_button_was_toggled)
         self.setCentralWidget(button)
 

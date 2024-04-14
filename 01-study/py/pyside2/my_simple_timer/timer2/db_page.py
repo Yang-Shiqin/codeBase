@@ -54,7 +54,7 @@ class DBPage(QDialog):
         self.tab_widget.append(tab3_pie)
 
         # 日历组件
-        self.cal =  QCalendarWidget(self)
+        self.cal = QCalendarWidget(self)
         self.cal.setGridVisible(True)
         self.cal.clicked[QDate].connect(self.set_time)
 
@@ -96,6 +96,13 @@ class DBPage(QDialog):
         self.show_db_html(self.tabWidget.currentIndex())
         self.color_time(Qt.yellow)
 
+    def ms2str(self, ms):
+        seconds = ms // 1000
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        return f'{hours}h{minutes}m{seconds}s'
+
     # 展示tab视图, 有时间和任务名筛选条件(但后来没有实现任务名筛选，因为pyechart自带)
     def show_db_html(self, index):
         if self.times[0] and self.times[1]:
@@ -121,13 +128,15 @@ class DBPage(QDialog):
                 <th>id</th>
                 <th>name</th>
                 <th>create_time</th>
-                <th>duration</th>
+                <th>duration(ms)</th>
+                <th>duration(time)</th>
             </tr>
         '''
         for row in data:
             html += '<tr>'
             for col in row:
                 html += f'<td>{col}</td>'
+            html += f'<td>{self.ms2str(col)}</td>'   # duration转换为时分秒
             html += '</tr>'
         html += '</table>'
         return html
@@ -159,7 +168,8 @@ class DBPage(QDialog):
             Line(init_opts=opts.InitOpts(width="500px", height="250px"))
             .add_xaxis(xaxis_data=list(days))
             .set_global_opts(title_opts=opts.TitleOpts(title="每日任务时长"),
-                legend_opts=opts.LegendOpts(type_="scroll", pos_left="right", orient="vertical"))
+                legend_opts=opts.LegendOpts(type_="scroll", pos_left="right", orient="vertical"),
+                tooltip_opts=opts.TooltipOpts(axis_pointer_type="cross"))
         )
         for name, data in zip(names, y_data):   # 每个任务一条线
             line.add_yaxis(series_name=name, y_axis=data)

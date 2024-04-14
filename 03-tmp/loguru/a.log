@@ -1,0 +1,4 @@
+2024-04-11 14:27:03.565 | INFO     | __main__:func2:10 - func2: ysq is good
+2024-04-11 14:27:03.566 | INFO     | dir1.code1:func1:7 - func1: lza is pig
+2024-04-11 14:29:10.871 | INFO     | __main__:func2:10 - func2: ysq is good
+2024-04-11 14:29:10.872 | INFO     | dir1.code1:func1:7 - func1: lza is pig

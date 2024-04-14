@@ -1,4 +1,6 @@
 # pyside2学习
+- 笔记在：`notee\tec\qt_study\PyQt-Fluent-Widgets入门-pyside2.md`
+- 最终形成的项目在 `codeBase/02-project/simple_timer`
 
 ## 目录结构
 ```bash
@@ -25,47 +27,37 @@
 │       ├── st.db
 │       └── stdb.py
 ├── pyside2_learning        ######## pyside2学习的过程
-│   ├── 00__frame.py
-│   ├── 01__button_window.py
-│   ├── 02__qmainwindow.py
-│   ├── 03__qmainwindow2.py
-│   ├── 04__signal_slot.py
-│   ├── 05__signal_slot2.py
-│   ├── 06__signal_slot3.py
-│   ├── 07__signal_slot_2widget.py
-│   ├── 08__event.py
-│   ├── 09__widgets.py
-│   ├── 10__qt_designer_as_main.py
-│   ├── 11__qt_designer_as_dialog.py
-│   ├── 12__qt_designer_static_load
-│   │   ├── __pycache__
-│   │   │   └── employee_dlg.cpython-310.pyc
+│   ├── 00__frame.py                    # pyqt最简单的应用框架
+│   ├── 01__button_window.py            # 最简单的一个按钮窗口
+│   ├── 02__qmainwindow.py              # 主窗口
+│   ├── 03__qmainwindow2.py             # 自定义的主窗口
+│   ├── 04__signal_slot.py              # 信号与槽1: 打印
+│   ├── 05__signal_slot2.py             # 信号与槽2: 改变组件
+│   ├── 06__signal_slot3.py             # 信号与槽3: 改变组件
+│   ├── 07__signal_slot_2widget.py      # 信号与槽4: 组件间连接
+│   ├── 08__event.py                    # 重写event(event是比信号更底层的，暂时没用)
+│   ├── 09__widgets.py                  # 组件介绍
+│   ├── 10__qt_designer_as_main.py      # qt-designer设计的.ui文件作为主窗口(动态加载)
+│   ├── 11__qt_designer_as_dialog.py    # qt-designer设计的.ui文件作为对话框(动态加载)
+│   ├── 12__qt_designer_static_load     ### qt-designer设计的.ui文件作为对话框(动态加载)
 │   │   ├── employee.ui
-│   │   ├── employee_dlg.py
-│   │   └── main.py
-│   ├── 13__qresource_sys
-│   │   ├── __pycache__
-│   │   │   └── resources.cpython-310.pyc
-│   │   ├── animal-monkey.png
+│   │   ├── employee_dlg.py             # pyside2-uic employee.ui > employee_dlg.py生成的
+│   │   └── main.py                     # 入口
+│   ├── 13__qresource_sys               ### qresource介绍
+│   │   ├── animal-monkey.png           # 具体资源1
 │   │   ├── animal-penguin.png
-│   │   ├── main_direct.py
-│   │   ├── main_qrc.py
-│   │   ├── resources.py
-│   │   └── resources.qrc
+│   │   ├── main_direct.py              # 入口: 直接调用资源
+│   │   ├── main_qrc.py                 # 入口: qrc方式调用资源
+│   │   ├── resources.py                # pyside2-rcc resources.qrc -o resources.py生成的
+│   │   └── resources.qrc               # 资源如何组织(可以由qdesigner生成)
 │   └── dialog.ui
 ├── qt-fluent               # qt-fluent学习的过程(美化的qt)
 │   ├── 00__qfluent_button
-│   │   ├── __pycache__
-│   │   │   └── a.cpython-310.pyc
 │   │   ├── a.py
 │   │   ├── button.ui
 │   │   └── main.py
 │   └── test.py
 └── test1                   # 没用的, 临时的代码
-    ├── a.ui
-    ├── a_layout.png
-    ├── cal.py
-    └── test1.py
 
 18 directories, 58 files
 ```
@@ -73,10 +65,19 @@
 ## my_simple_timer项目介绍
 #TODO:
 - [ ] 美化
-- [ ] 任务条件筛选
+- [ ] 展示时间(纵坐标变成h为单位，label展示时分秒)
+    - https://blog.csdn.net/weixin_45366499/article/details/105167985
+    - 不会搞
+- [ ] 任务/子任务
 - [ ] 数据库删除
-- [ ] 数据库导出
+- [x] version
+- [ ] qresource
+    - [ ] 图标
+    - [ ] 按钮
+- [ ] 软件介绍/作者链接
+- [ ] 数据库导出/导入
 - [ ] github文档
+- [ ] line的textedit可从已有任务中生成
 - [ ] 边缘收缩
     - https://blog.csdn.net/wisdomroc/article/details/135977423
 
