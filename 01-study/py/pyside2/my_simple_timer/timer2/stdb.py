@@ -56,5 +56,11 @@ class STDB: # simple timer database
 
 if __name__ == '__main__':
     db = STDB()
+    # db_data = {}
+    # db_data['name'] = "task1"
+    # # 设置为now的前一天
+    # db_data['create_time'] = QDateTime.currentDateTime().addDays(-1).toString('yyyy-MM-dd hh:mm:ss')
+    # db_data['duration'] = QTime(0,0,0).msecsTo(QTime(0,3,0))
+    # db.insert(db_data)
     print(db.query_all())
     del db

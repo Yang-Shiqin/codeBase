@@ -1,54 +1,55 @@
-#!/usr/bin/env python
-# coding=utf-8
-import torch
-def __compute_features__(sequence_char_indices, sequence_lengths, max_mb_seq_len, counts_per_sequence):
-    """Compute one-hot sequence features + position features with shape (n_sequences, sequence_length, n_features)
-    from sequence indices
-    """
-    n_features = 8 
-        # Send indices to device
-    sequence_char_indices = sequence_char_indices.to(dtype=torch.long)
-    sequence_lengths = sequence_lengths.to(dtype=torch.long)
-        # Only send sequence counts to device, if using sequence counts
-        # Allocate tensor for one-hot sequence features + position features
-    features_one_hot_shape = (sequence_char_indices.shape[0], max_mb_seq_len, n_features)
-    features_one_hot_padded = torch.zeros(size=features_one_hot_shape)
-    print('pad, ', features_one_hot_padded.shape)
-        # Set one-hot sequence features
-    features_one_hot = features_one_hot_padded[:, :sequence_char_indices.shape[1]]
-    features_one_hot = features_one_hot.reshape((-1, n_features))
-    features_one_hot[torch.arange(features_one_hot.shape[0]), sequence_char_indices.reshape((-1))] = 1.
-    # Set padded sequence-parts to 0 (sequence_char_indices == -1 marks the padded positions)
-    features_one_hot[sequence_char_indices.reshape((-1)) == -1, -1] = 0.
-    features_one_hot = features_one_hot.reshape((sequence_char_indices.shape[0], sequence_char_indices.shape[1],
-                                                n_features))
-    print('asd, ', features_one_hot.shape)
-    features_one_hot_padded[:, :sequence_char_indices.shape[1], :] = features_one_hot
-    # Scale by sequence counts
-    features_one_hot_padded = features_one_hot_padded * counts_per_sequence[:, None, None]
-        # Add position information
-        # Perform normalization to std=1
-    features_one_hot_padded = features_one_hot_padded / features_one_hot_padded.std()
-    return features_one_hot_padded
+import pandas as pd
+import numpy as np
 
-sequence_char_indices=[
-    torch.tensor([[1,2,4,-1],[2,5,3,1],[0,-1,-1,-1],[2,3,5,6],[2,3,-1,-1]]),
-    torch.tensor([[1,4,-1],[3,5,6],[3,-1,-1]]),
-    torch.tensor([[1,2,4,-1,-1],[2,5,3,1,7],[2,3,5,6,-1],[2,3,-1,-1,-1]]),
-]
-sequence_lengths=[
-    torch.tensor([3,4,1,4,2]),
-    torch.tensor([2,3,1]),
-    torch.tensor([3,5,4,2]),
-] 
-max_mb_seq_len=max(t.max() for t in sequence_lengths)
-counts_per_sequences=[
-    torch.tensor([1,2,1,2,2]),
-    torch.tensor([2,1,1]),
-    torch.tensor([1,1,2,2]),
-] 
-inputs_list = [__compute_features__(sequence_of_indices, sequence_lengths, max_mb_seq_len, counts_per_sequence)
-                           for sequence_of_indices, sequence_lengths, counts_per_sequence
-                           in zip(sequence_char_indices, sequence_lengths, counts_per_sequences)]
-print('inputs, ', sequence_char_indices)
-print(inputs_list)
+def mae(y_true: pd.DataFrame, y_pred: pd.DataFrame, clean=True):
+    if clean:
+        y_true = y_true.replace(0, np.nan)        # 0值一般为异常值
+        y_true = y_true.replace(1e-6, np.nan)     # 1e-6在数据库一般为？值
+    mae = (y_true - y_pred).abs().dropna().mean()
+    return mae
+
+def mape(y_true: pd.DataFrame, y_pred: pd.DataFrame, clean=True):
+    if clean:
+        y_true = y_true.replace(0, np.nan)
+        y_true = y_true.replace(1e-6, np.nan)
+    mape = ((y_true - y_pred) / (y_true+1e-6)).abs().dropna().mean()
+    return mape
+
+def rmse(y_true: pd.DataFrame, y_pred: pd.DataFrame, clean=True):
+    if clean:
+        y_true = y_true.replace(0, np.nan)
+        y_true = y_true.replace(1e-6, np.nan)
+    mse = ((y_true - y_pred) ** 2).dropna().mean()
+    rmse = mse ** 0.5
+    return rmse
+
+def pso_loss(y_true: pd.DataFrame, y_pred: pd.DataFrame, clean=True):
+    if clean:
+        y_true = y_true.replace(0, np.nan)
+        y_true = y_true.replace(1e-6, np.nan)
+    std = y_true.dropna().std()
+    loss = ((y_pred - y_true) / (std+1e-6)).abs().dropna().sum()
+    return loss
+
+# 生成第一对DataFrame
+data1 = {
+    'A': [1,0,3],
+    'B': [2,3,4],
+}
+df1 = pd.DataFrame(data1)
+
+# 生成第二对DataFrame，数据不同于第一对
+data2 = {
+    'A': [2,3,2],
+    'B': [2,3,2],
+}
+df2 = pd.DataFrame(data2)
+
+print(df1, '\n', df2)
+print((df1-df2)**2)
+print(mae(df1['A'], df2['B']))
+print(mape(df1, df2))
+print(rmse(df1, df2))
+loss = pso_loss(df1, df2)
+print(loss)
+print(loss.sum())

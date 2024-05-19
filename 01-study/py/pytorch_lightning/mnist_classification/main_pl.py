@@ -48,7 +48,7 @@ class LeNet(pl.LightningModule):    # nn.Module->pl.LightningModule
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, x):
+    def forward(self, x):  # LightningModule API
         """前向传播，计算输入样本每个分类得分
         参数:
             x: 输入样本, 大小为(N, Cin, H, W)
@@ -76,7 +76,7 @@ class LeNet(pl.LightningModule):    # nn.Module->pl.LightningModule
         return optimizer
 
     # 4. the loss function
-    def cross_entropy_loss(self, logit, y):
+    def cross_entropy_loss(self, logit, y): # 未必定义在model里
         return F.nll_loss(logit, y)
 
     # 5. training
@@ -94,7 +94,7 @@ class LeNet(pl.LightningModule):    # nn.Module->pl.LightningModule
         self.log('val_loss', loss)
 
 # 2. the data
-class MNISTDataModule(pl.LightningDataModule):
+class MNISTDataModule(pl.LightningDataModule):  # 或者用DataLoader(Trainer.fit的参数要改)
     """mnist数据集模块
     Examples:
         >>> mnist = MNISTDataModule(data_dir='./data/')

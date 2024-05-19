@@ -8,11 +8,16 @@ package main
 
 import "fmt"
 
+// 从别的地方导入
 type TreeNode struct{
     Val int
     Height int  // avl相关操作需要获取节点高度(该节点到其最远叶节点距离, 叶节点高度0, 空节点高度-1)
     Left *TreeNode
     Right *TreeNode
+}
+
+type aVLTree struct{
+    Root *TreeNode
 }
 
 func CreateNode(v int) *TreeNode{
@@ -24,7 +29,26 @@ func CreateNode(v int) *TreeNode{
     }
 }
 
-func (t )
+// 获取当前节点的高度
+func (t *aVLTree)height(node *TreeNode) int {
+    if node != nil {
+        return node.Height
+    }else{
+        return -1
+    }
+}
+
+// 更新当前节点的高度
+func (t *aVLTree)update_height(node *TreeNode){
+    lh := t.height(node.Left)
+    rh := t.height(node.Right)
+    node.Height = max(lh, rh)+1
+}
+
+// 获取当前节点的平衡因子
+func (t *aVLTree)balanceFactor(node *TreeNode){
+
+}
 
 // 根据nodelist层序排(完美二叉树，不考虑nil没孩子), 构建二叉树
 func createTree(nodeList []*TreeNode) *TreeNode{
