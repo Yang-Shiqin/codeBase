@@ -2,19 +2,32 @@
 using namespace std;
 
 class A{
-public:
+private:
     int a;
+public:
+    A(){cout<<"A1"<<endl;}
+    A(int a): a(a){
+        cout<<"A"<<endl;
+    }
     void f(){
         cout<<a<<endl;
     }
 };
 
+class B: A{
+private:
+    int b;
+    int c;
+public:
+    B(int a, int b, int c):A(){
+        A w(a);
+        cout << "B" << endl;
+    }
+};
+
 int main()
 {
-    class A aa, bb;
-    aa.a = 1;
-    aa.f();
-    cout << aa.f << " " << bb.f << endl;
+    B b(1,2,3);
     return 0;
 }
 

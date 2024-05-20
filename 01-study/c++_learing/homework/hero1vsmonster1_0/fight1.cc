@@ -157,7 +157,6 @@ public:
                 sleep(1);
                 ch = 0;
             }
-
         }
         setNonBlocking(false);  // 设置终端为阻塞模式
     }
