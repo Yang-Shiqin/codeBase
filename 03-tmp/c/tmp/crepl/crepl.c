@@ -8,7 +8,11 @@ int parse(const char * line){
   assert(line);
   while(*line==' ') line++;
   if (*line=='\n') return 0;
-  printf("Got %zu chars.\n", strlen(line)); // ??
+  if (strstr(line, "int ")==line){  // 函数
+    printf("func: Got %zu chars.\n", strlen(line)); // ??
+  }else{  // 表达式
+    printf("expr: Got %zu chars.\n", strlen(line)); // ??
+  }
   return 0;
 }
 
