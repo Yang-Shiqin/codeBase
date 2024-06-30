@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <assert.h>
 
 int parse(const char * line){
   assert(line);
