@@ -58,7 +58,7 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
     close(STDOUT_FILENO);
     FILE *file = NULL;
     char file_name[64] = {"/tmp/crepl/"};
-    char *args[128] = {"gcc", "-fPIC", "-shared", "-w", "-o", "all.so"};  // -w屏蔽warning
+    char *args[128] = {"gcc", "-fPIC", "-shared", "-w", "-o", "/tmp/crepl/all.so"};  // -w屏蔽warning
     int argc;
     for (argc=0; argc < *tail; argc++) {
       args[argc+6] = files_name[argc];
