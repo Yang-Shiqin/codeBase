@@ -58,12 +58,12 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
     close(STDOUT_FILENO);
     FILE *file = NULL;
     char file_name[64] = {"/tmp/crepl/"};
-    char *args[128] = {"gcc", "-fPIC", "-shared", "-o", "all.so"};
+    char *args[128] = {"gcc", "-fPIC", "-shared", "-w", "-o", "all.so"};  // -w屏蔽warning
     int argc;
     for (argc=0; argc < *tail; argc++) {
-      args[argc+5] = files_name[argc];
+      args[argc+6] = files_name[argc];
     }
-    argc += 5;
+    argc += 6;
     args[argc] = NULL;
     if (NULL==name){  // 匿名文件, 用mkstemp生成临时文件(但感觉不是很有必要)
       // strcat(file_name, "anonXXXXXX");
