@@ -39,7 +39,6 @@ int get_func_name(const char *line, char *dst){
   }
 }
 
-// [ ] todo: 管道, gcc错误则删掉文件, 错误信息需要管道来传递
 // 创建函数文件, 若创建匿名函数则生成链接所有.c的动态链接库
 int create_func(const char* name, const char *line, char *files_name[], int* tail){
   // fork?
@@ -128,7 +127,7 @@ int call_func(int *res){
     fprintf(stderr, "%s\n", error);
     return -1;
   }
-  func = (int(*))dlsym(handle, "____________________");
+  func = (int(*)())dlsym(handle, "____________________");
   if ((error=dlerror())!=NULL){
     fprintf(stderr, "%s\n", error);
     return -1;
