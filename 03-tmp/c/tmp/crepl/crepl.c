@@ -75,9 +75,9 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
       printf("Error opening file\n");
       return -1;
     }
-    if (NULL==name){  // 表达式, 创建匿名函数
+    if (file_name==name){  // 表达式, 创建匿名函数
       fprintf(file, "int ____________________(){ return %s;}", line);
-      args[argc++] = file_name;
+      args[argc++] = name;
       args[argc] = NULL;
     }else{
       fprintf(file, "%s", line);
