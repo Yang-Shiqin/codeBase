@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <regex.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <errno.h>
 
 #define FNAME_LEN_MAX (32)
@@ -79,7 +80,7 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
         printf("Error opening file\n");
         return -1;
       }
-      fprintf(file, line);
+      fprintf(file, "%s", line);
       fclose(file);
       // 编译成动态链接库
       execvp("gcc", args);
@@ -89,8 +90,9 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
     return -1;
   }else{
     wait(NULL);
-    return;
+    return 0;
   }
+  return 0;
 }
 
 int parse(const char * line, char *files_name[], int* tail){
