@@ -1,3 +1,5 @@
+// BUG: 重复定义函数, 或者定义错误, 会把原来的文件覆盖掉(因为是编译后才判断对错的), 调用是调用的新定义的(但是作业没要求我们这些错误输入必须实现对)
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,8 +11,11 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-#define FNAME_LEN_MAX (32)
+#define FNAME_LEN_MAX (64)
+#define ROOT "/tmp/crepl/"
+#define SO ROOT "all.so"
 
+// 解析函数名: int name(xxx){xxx};
 int get_func_name(const char *line, char *dst){
   const char *pattern = "int\\s+([a-zA-Z_]\\w*)\\s*\\(";
   regex_t regex;
@@ -24,7 +29,7 @@ int get_func_name(const char *line, char *dst){
   if (regexec(&regex, line, 2, matches, 0) == 0) {
     // 提取匹配到的函数名
     int len = matches[1].rm_eo-matches[1].rm_so;
-    if (len>=30){
+    if (len>=FNAME_LEN_MAX-16){
       regfree(&regex);
       return -1;
     }
@@ -39,95 +44,71 @@ int get_func_name(const char *line, char *dst){
   }
 }
 
-// 创建函数文件, 若创建匿名函数则生成链接所有.c的动态链接库
+// 创建函数文件或匿名函数文件(name==NULL), 生成链接所有.c的动态链接库
 int create_func(const char* name, const char *line, char *files_name[], int* tail){
-  // fork?
   int pipefd[2];
   if (-1==pipe(pipefd)){
     perror("pipe");
     return -1;
   }
-  // todo
   pid_t pid=fork();
   if (-1==pid){
     perror("fork");
     return -1;
   }else if (pid==0){  // child, 写
     close(pipefd[0]);
-    dup2(pipefd[1], STDERR_FILENO);
+    dup2(pipefd[1], STDERR_FILENO); // 把写口连到stderr
     close(STDOUT_FILENO);
     FILE *file = NULL;
-    char file_name[64] = {"/tmp/crepl/"};
-    char *args[128] = {"gcc", "-fPIC", "-shared", "-w", "-o", "/tmp/crepl/all.so"};  // -w屏蔽warning
+    char file_name[FNAME_LEN_MAX] = {ROOT}; // 匿名函数名
+    char *args[128] = {"gcc", "-fPIC", "-shared", "-w", "-o", SO};  // -w屏蔽warning
     int argc;
     for (argc=0; argc < *tail; argc++) {
       args[argc+6] = files_name[argc];
     }
     argc += 6;
     args[argc] = NULL;
-    if (NULL==name){  // 匿名文件, 用mkstemp生成临时文件(但感觉不是很有必要)
-      // strcat(file_name, "anonXXXXXX");
-      // int fd = mkstemp(file_name);
-      // if (fd == -1) {
-      //   perror("mkstemp");
-      //   return -1;
-      // }
-      // write(fd, "int ____________________(){ return ", 36);
-      // write(fd, line, strlen(line));
-      // write(fd, ";}", 3);
-      // // 完成操作后关闭文件描述符
-      // close(fd);
-      strcat(file_name, "-.c");
-      file = fopen(file_name, "w");
-      if (file == NULL) {
-        printf("Error opening file\n");
-        return -1;
-      }
+    strcat(file_name, "-.c");
+    if (NULL==name) name = file_name; // 表达式, name指向filename
+    file = fopen(name, "w");
+    if (file == NULL) {
+      printf("Error opening file\n");
+      return -1;
+    }
+    if (NULL==name){  // 表达式, 创建匿名函数
       fprintf(file, "int ____________________(){ return %s;}", line);
-      fclose(file);
       args[argc++] = file_name;
       args[argc] = NULL;
-      // 动态链接: 为了调用
-      execvp("gcc", args);
-      // 咋删临时文件
     }else{
-      // 写文件
-      file = fopen(name, "w");
-      if (file == NULL) {
-        printf("Error opening file\n");
-        return -1;
-      }
       fprintf(file, "%s", line);
-      fclose(file);
-      // 编译成动态链接库: 为了判断这个文件有没有问题
-      execvp("gcc", args);
-      return -1;    // 失败则会运行到这
     }
+    fclose(file);
+    // 动态链接: 表达式是为了调用, 函数是为了判断这个文件有没有问题
+    execvp("gcc", args);
     perror("execlp");
     return -1;
   }else{  // parent, 读
     close(pipefd[1]);
-    char buf[256] = {0};
+    char buf[64] = {0};
     if ((read(pipefd[0], buf, sizeof(buf)-1)) > 0){ // 输出stderr就算报错
-      printf("%s\n", buf);
-      while((read(pipefd[0], buf, sizeof(buf)-1)) > 0) printf("%s\n", buf);
+      {printf("%s\n", buf);}while((read(pipefd[0], buf, sizeof(buf)-1)) > 0);
       return -1;
     }
     wait(NULL);
-    return 0;
   }
   return 0;
 }
 
+// 调用匿名函数
 int call_func(int *res){
   char *error;
   int (*func)()=NULL;
-  void *handle = dlopen("/tmp/crepl/all.so", RTLD_LAZY);
+  void *handle = dlopen(SO, RTLD_LAZY); // 显示调用动态链接库
   if ((error=dlerror())!=NULL){
     fprintf(stderr, "%s\n", error);
     return -1;
   }
-  func = (int(*)())dlsym(handle, "____________________");
+  func = (int(*)())dlsym(handle, "____________________"); // 匿名函数
   if ((error=dlerror())!=NULL){
     fprintf(stderr, "%s\n", error);
     return -1;
@@ -137,31 +118,31 @@ int call_func(int *res){
   return 0;
 }
 
+// 解析一行
 int parse(const char * line, char *files_name[], int* tail){
   assert(line);
-  char name[64]={"/tmp/crepl/"};  // 太长不要
+  char name[FNAME_LEN_MAX]={ROOT};  // 太长不要
   while(*line==' ') line++;
   if (*line=='\n') return 0;
   if (strstr(line, "int ")==line){  // 函数
     // 1. 检查并获取函数命名
-    if(0==get_func_name(line, name+strlen(name))){ // 没有检查有没有重复(题目里说没重复定义, 遇到可以算undefine behavior),不过其实没问题
+    if(0==get_func_name(line, name+strlen(name))){ // 没有检查有没有重复(题目里说没重复定义, 遇到可以算undefine behavior)
       strcat(name, ".c");
-      files_name[(*tail)++] = strdup(name);
+      files_name[(*tail)++] = strdup(name); // 每解析出一个名称, 就malloc字符串内存报错下来
       // 2. 创建函数
       if(-1==create_func(name, line, files_name, tail)){
+        free(files_name[*tail]);
         (*tail)--; // 失败则去掉当前函数
       }
     }
-    // printf("func: Got %zu chars.\n", strlen(line)); // ??
   }else{  // 表达式
     // 1. 创建匿名函数
     if(-1!=create_func(NULL, line, files_name, tail)){
       int res;
-      // 调用匿名函数
+      // 2. 调用匿名函数
       call_func(&res);
       printf("%d\n", res);
     }
-    printf("expr: Got %zu chars.\n", strlen(line)); // ??
   }
   return 0;
 }
@@ -170,7 +151,7 @@ int main(int argc, char *argv[]) {
   static char line[4096];
   char* files_name[128] = {0};    // 最多100个函数
   int tail=0;
-  int result = mkdir("/tmp/crepl", 0755);
+  int result = mkdir(ROOT, 0755);
   if (result != 0) {
     if (errno != EEXIST) {
       printf("Error creating directory: %d\n", errno);
@@ -180,9 +161,14 @@ int main(int argc, char *argv[]) {
   while (1) {
     printf("crepl> ");
     fflush(stdout);
-    if (!fgets(line, sizeof(line), stdin)) {
+    if (!fgets(line, sizeof(line), stdin)) {  // ctrl-d则不会获取字符并退出, 否则至少获得/n字符
       break;
     }
     parse(line, files_name, &tail);
   }
+  // free strdup的内存
+  for (; tail>0; tail--){
+    free(files_name[tail-1]);
+  }
+  return 0;
 }
