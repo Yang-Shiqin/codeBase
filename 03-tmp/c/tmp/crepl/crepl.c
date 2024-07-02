@@ -66,16 +66,26 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
     }
     argc += 5;
     args[argc] = NULL;
-    if (NULL==name){  // 匿名文件, 用mkstemp生成临时文件
-      strcat(file_name, "anonXXXXXX");
-      int fd = mkstemp(file_name);
-      if (fd == -1) {
-        perror("mkstemp");
+    if (NULL==name){  // 匿名文件, 用mkstemp生成临时文件(但感觉不是很有必要)
+      // strcat(file_name, "anonXXXXXX");
+      // int fd = mkstemp(file_name);
+      // if (fd == -1) {
+      //   perror("mkstemp");
+      //   return -1;
+      // }
+      // write(fd, "int ____________________(){ return ", 36);
+      // write(fd, line, strlen(line));
+      // write(fd, ";}", 3);
+      // // 完成操作后关闭文件描述符
+      // close(fd);
+      strcat(file_name, "-.c");
+      file = fopen(file_name, "w");
+      if (file == NULL) {
+        printf("Error opening file\n");
         return -1;
       }
-      write(fd, line, strlen(line));
-      // 完成操作后关闭文件描述符
-      close(fd);
+      fprintf(file, "int ____________________(){ return %s;}", line);
+      fclose(file);
       args[argc++] = file_name;
       args[argc] = NULL;
       // 动态链接: 为了调用
@@ -101,6 +111,7 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
     char buf[256] = {0};
     if ((read(pipefd[0], buf, sizeof(buf)-1)) > 0){ // 输出stderr就算报错
       printf("%s\n", buf);
+      while((read(pipefd[0], buf, sizeof(buf)-1)) > 0) printf("%s\n", buf);
       return -1;
     }
     wait(NULL);
@@ -109,15 +120,32 @@ int create_func(const char* name, const char *line, char *files_name[], int* tai
   return 0;
 }
 
+int call_func(int *res){
+  char *error;
+  int (*func)()=NULL;
+  void *handle = dlopen("/tmp/crepl/all.so", RTLD_LAZY);
+  if ((error=dlerror())!=NULL){
+    fprintf(stderr, "%s\n", error);
+    return -1;
+  }
+  func = (int(*))dlsym(handle, "____________________");
+  if ((error=dlerror())!=NULL){
+    fprintf(stderr, "%s\n", error);
+    return -1;
+  }
+  *res = func();
+  dlclose(handle);
+  return 0;
+}
+
 int parse(const char * line, char *files_name[], int* tail){
   assert(line);
-  // [ ] todo: 绝对地址
   char name[64]={"/tmp/crepl/"};  // 太长不要
   while(*line==' ') line++;
   if (*line=='\n') return 0;
   if (strstr(line, "int ")==line){  // 函数
     // 1. 检查并获取函数命名
-    if(0==get_func_name(line, name+strlen(name))){ // 没有检查有没有重复(题目里说没重复定义, 遇到可以算undefine behavior)
+    if(0==get_func_name(line, name+strlen(name))){ // 没有检查有没有重复(题目里说没重复定义, 遇到可以算undefine behavior),不过其实没问题
       strcat(name, ".c");
       files_name[(*tail)++] = strdup(name);
       // 2. 创建函数
@@ -125,11 +153,15 @@ int parse(const char * line, char *files_name[], int* tail){
         (*tail)--; // 失败则去掉当前函数
       }
     }
-    printf("func: Got %zu chars.\n", strlen(line)); // ??
+    // printf("func: Got %zu chars.\n", strlen(line)); // ??
   }else{  // 表达式
     // 1. 创建匿名函数
-    create_func(NULL, line, files_name, tail);
-    // 2. [ ] todo: 调用匿名函数
+    if(-1!=create_func(NULL, line, files_name, tail)){
+      int res;
+      // 调用匿名函数
+      call_func(&res);
+      printf("%d\n", res);
+    }
     printf("expr: Got %zu chars.\n", strlen(line)); // ??
   }
   return 0;
