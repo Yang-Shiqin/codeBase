@@ -1,25 +1,31 @@
-class MyClass:
-    def __init__(self):
-        self.__private_var = 42
+import numpy as np
 
-    def _private_method(self):
-        print("This is a private method")
+def weighted_moving_average(data, window_size):
+    """
+    计算数据序列的加权移动平均值。
+    
+    参数:
+    data (list/numpy.ndarray) - 待计算移动平均的数据序列
+    window_size (int) - 移动窗口的大小
+    
+    返回:
+    numpy.ndarray - 加权移动平均值序列
+    """
+    n = len(data)
+    head = (window_size-1)//2
+    tail = head+n-window_size+1
+    weighted_avg = np.zeros(n)
+    
+    # 计算中间部分的加权平均值
+    weights = np.ones(window_size) / window_size
+    weighted_avg[head:tail] = np.convolve(data, weights, 'valid')
+    
+    # 计算两边部分的加权平均值
+    for i in range(head):
+        weighted_avg[i] = data[:1+i].mean()
+    for i in range(tail, n):
+        weighted_avg[i] = data[tail:1+i].mean()
+    return weighted_avg
 
-    def public_method(self):
-        self.__private_method()
-        print(self.__private_var)
-
-# 实例化对象
-obj = MyClass()
-
-# 调用公共方法
-print(obj.__dir__())
-#
-## 直接访问私有方法和属性会报错
-## obj.__private_method()  # AttributeError
-## print(obj.__private_var)  # AttributeError
-#
-## 通过名称重整访问私有成员
-#obj._MyClass__private_method()
-#print(obj._MyClass__private_var)
-#
+data = np.array([1,2,3,4,5])
+print(weighted_moving_average(data, 2))
