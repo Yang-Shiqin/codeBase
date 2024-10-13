@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "thread.h": "c"
+        "thread.h": "c",
+        "log.h": "c",
+        "swscale.h": "c"
     }
 }
