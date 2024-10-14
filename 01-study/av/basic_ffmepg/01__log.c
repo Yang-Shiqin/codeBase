@@ -1,3 +1,5 @@
+/* 日志系统 */
+
 // gcc 01__info_meta.c -lavutil
 // ./a.out
 

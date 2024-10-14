@@ -1,3 +1,5 @@
+/* 打印视频信息 */
+
 // gcc 02__info_meta.c -lavformat -lavutil
 // ./a.out
 

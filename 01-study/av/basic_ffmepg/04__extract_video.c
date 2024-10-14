@@ -1,3 +1,5 @@
+/* 解复用: 从avi/ts提取h264视频 */
+
 // gcc 04__extract_video.c -lavformat -lavutil -lavcodec
 // ./a.out ../data/fly.avi ../output/out.h264 或 ./a.out ../data/fly.ts ../output/out.h264
 // ffplay ../output/out.h264

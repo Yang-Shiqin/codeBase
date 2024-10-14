@@ -1,3 +1,5 @@
+/* 解复用: 从mp4提取aac音频 */
+
 // gcc 03__extract_audio.c -lavformat -lavutil -lavcodec
 // ./a.out ../data/fly.mp4 ../output/out.aac
 // ffplay ../output/out.aac
