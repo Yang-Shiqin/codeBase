@@ -1,10 +1,15 @@
 /* SDL显示yuv数据 */
 
+// gcc 06__simplest_SDL.c -lSDL2
+// ./a.out
+
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
+// 显示窗口大小(可能缩放图片)
 #define WINDOW_W 1024
 #define WINDOW_H 480
+// 输入图像大小
 #define YUV_W 960
 #define YUV_H 400
 
@@ -55,9 +60,11 @@ int main(int argc, char* argv[]){
     int running = 1;
     while(running){
         // 事件处理
-        while(SDL_PollEvent(&event)){
+        while(SDL_PollEvent(&event) || running==3){
             if (event.type == SDL_QUIT){
                 running = 0;
+            }else if(event.type==SDL_KEYDOWN && event.key.keysym.sym==SDLK_SPACE){  // 增加空格暂停功能
+                running ^= 2;
             }
         }
 

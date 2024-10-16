@@ -1,9 +1,10 @@
 /* 日志系统 */
 
-// gcc 01__info_meta.c -lavutil
+// gcc 01__log.c -lavutil
 // ./a.out
 
 #include <libavutil/log.h>
+#include <stdio.h>
 
 int main(int argc, char *argv[])
 {

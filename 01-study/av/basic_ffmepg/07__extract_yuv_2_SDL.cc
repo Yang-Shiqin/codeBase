@@ -1,4 +1,7 @@
-/* SDL显示yuv数据 */
+/* SDL显示ffmpeg从avi提取的yuv数据(05+06, 06作为一个类) */
+
+// g++ 07__extract_yuv_2_SDL.cc -lSDL2 -lavformat -lswscale -lavcodec -lavutil
+// ./a.out ../data/fly.avi 或.ts
 
 extern "C" {
     #include <SDL2/SDL.h>
@@ -163,7 +166,7 @@ ExtractYUV::~ExtractYUV(){
 }
 
 int ExtractYUV::extract_yuv(uint8_t *y_plane, uint8_t *u_plane, uint8_t *v_plane){
-    if (step==1){
+    if (this->step==1){
         goto step1;
     }
     while(av_read_frame(this->fmt_ctx, this->pkt) >= 0){
@@ -186,6 +189,7 @@ step1:
                     memcpy(y_plane, this->frame_yuv->data[0], this->h*this->w);    // Y
                     memcpy(u_plane, this->frame_yuv->data[1], this->h*this->w/4);  // U
                     memcpy(v_plane, this->frame_yuv->data[2], this->h*this->w/4);  // V
+                    this->step=1;
                     return 0;
                 }
             }else{
@@ -199,6 +203,17 @@ step1:
 }
 
 int main(int argc, char* argv[]){
+    char * src = NULL;
+    if (argc<2){  // 错误处理
+        av_log(NULL, AV_LOG_ERROR, "usage: %s <input>\n", argv[0]);
+        return 1;
+    }
+    src = argv[1];
+    if (!src){
+        av_log(NULL, AV_LOG_ERROR, "input is NULL\n");
+        return 1;
+    }
+
     // 1. 初始化SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -228,8 +243,12 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    // 5. 打开文件
-    ExtractYUV ex_yuv("../data/fly.avi", YUV_H, YUV_W);
+    // 5. 创建YUV数据提取器
+    ExtractYUV ex_yuv(src, YUV_H, YUV_W);
+    if (ex_yuv.invalid) {
+        printf("YUV file could not be opened!\n");
+        return 1;
+    }
 
     // YUV数据buf
     uint8_t *y_plane = (uint8_t *)malloc(YUV_W*YUV_H);

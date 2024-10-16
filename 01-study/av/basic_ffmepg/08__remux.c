@@ -1,14 +1,11 @@
-/* 解复用+解码: 从avi/ts提取yuv视频解码数据 */
+/* 格式转换/解复用+复用: mp4->flv等 */
 
-// [ ] TODO
-
-// gcc 05__extract_yuv.c -lavformat -lavutil -lavcodec -lswscale
+// gcc .c -lavformat -lavutil -lavcodec -lswscale
 // ./a.out ../data/fly.avi ../output/out.yuv 或 ./a.out ../data/fly.ts ../output/out.yuv
-// ffplay ../output/out.yuv
+// ffplay ../output/out.h264
 
 #include <libavutil/log.h>
 #include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <stdio.h>
 #include <string.h>
@@ -62,7 +59,7 @@ int main(int argc, char* argv[])
   }
 
   // 4. 查找流对应的编码器并分配上下文
-  const AVCodec *codec = avcodec_find_decoder(fmt_ctx->streams[video_index]->codecpar->codec_id);
+  AVCodec *codec = avcodec_find_decoder(fmt_ctx->streams[video_index]->codecpar->codec_id);
   if (!codec){
     av_log(NULL, AV_LOG_ERROR, "avcodec_find_decoder failed\n");
     goto close_output;

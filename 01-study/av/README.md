@@ -26,5 +26,16 @@ Package: libavcodec-dev
 Version: 7:4.4.2-0ubuntu0.22.04.1
 ```
 
+---
+
+2024/10/15又把上面这些apt安装的卸了，源码编译7.1了
+
+```bash
+./configure --enable-gpl --enable-libx264 --enable-libx265 --enable-libvpx --enable-libopus --enable-libvorbis
+ --enable-libmp3lame --enable-libass  --enable-shared
+```
+
+
 ## 相关笔记
 - `tec/Audio&Video/FFMpeg`
+- 
