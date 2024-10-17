@@ -1,23 +1,29 @@
-/* 格式转换/解复用+复用: mp4->flv等 */
+/* 格式转换/解复用+复用: mp4->flv等. 测试支持:
+ * - mp4->mpeg-ts
+ * - mp4->mp4
+ * - avi->mpeg-ts
+ * - avi->mp4
+ * - avi->avi
+ * - mpeg-ts->mpeg-ts
+ * - mpeg-ts->mp4
+ * - mpeg-ts->avi
+ * mp4->avi 会失败, 报错h264封装格式不同(可能不仅要解复用复用，还要解码编码)
+ */
 
-// gcc .c -lavformat -lavutil -lavcodec -lswscale
-// ./a.out ../data/fly.avi ../output/out.yuv 或 ./a.out ../data/fly.ts ../output/out.yuv
-// ffplay ../output/out.h264
+// gcc 08__remux.c -lavformat -lavutil -lavcodec
+// ./a.out ../data/fly.avi ../output/fly.mp4
+// ffplay ../output/out.mp4
 
 #include <libavutil/log.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
 #include <stdio.h>
-#include <string.h>
 
 int main(int argc, char* argv[])
 {
-  int ret;
-  int l;
-  int video_index;
-  AVFormatContext *fmt_ctx = NULL;
-  char * src = NULL;
-  char * dst = NULL;
+  int ret, i, new_index;
+  AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
+  char *src = NULL, *dst = NULL;
+
   av_log_set_level(AV_LOG_INFO);
 
   // 设置从命令行读入参数(输入视频，输出音频)
@@ -34,129 +40,124 @@ int main(int argc, char* argv[])
   }
 
   // 1. 打开输入视频文件
-  ret = avformat_open_input(&fmt_ctx, src, NULL, NULL);
+  ret = avformat_open_input(&ifmt_ctx, src, NULL, NULL);  // 根据src文件名判断封装格式
   if (ret < 0){
     av_log(NULL, AV_LOG_ERROR, "open input failed\n");
     return -1;
   }
-  // 2. 获取视频流详细信息并填入fmt_ctx中
-  if(avformat_find_stream_info(fmt_ctx, NULL) < 0){
+
+  // 2. 获取视频流详细信息并填入ifmt_ctx中
+  ret = avformat_find_stream_info(ifmt_ctx, NULL);
+  if(ret < 0){
     av_log(NULL, AV_LOG_ERROR, "Could not find stream information\n");
     goto close_input;
 	}
+  av_dump_format(ifmt_ctx, 0, src, 0);
 
-  FILE* dst_fd = fopen(dst, "wb");
-  if (!dst_fd){
-    av_log(NULL, AV_LOG_ERROR, "open output failed\n");
+  // 3. 初始化输出上下文结构体
+  avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, dst); // 根据dst文件名判断封装格式
+  if (!ofmt_ctx){
+    av_log(NULL, AV_LOG_ERROR, "avformat_alloc_output_context2 failed\n");
     goto close_input;
   }
 
-  // 3. 从输入文件中获取流stream，video_index为视频流索引
-  video_index = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
-  if (video_index < 0){
-    av_log(NULL, AV_LOG_ERROR, "finding best stream failed\n");
+  // 4. 复制输入流信息到输出上下文
+  // 只复制视频、音频、字幕, 因此要对index重新映射
+  int *stream_mapping = av_mallocz(ifmt_ctx->nb_streams * sizeof(*stream_mapping));
+  if (!stream_mapping){
+    av_log(NULL, AV_LOG_ERROR, "av_mallocz failed\n");
     goto close_output;
   }
+  // 遍历流
+  for (i=0, new_index=0; i<ifmt_ctx->nb_streams; i++){
+    AVStream *in_stream = ifmt_ctx->streams[i];
+    if ((in_stream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) &&
+        (in_stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO) &&
+        (in_stream->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE)){
+      stream_mapping[i] = -1; // 不复制非(视频、音频、字幕)
+      continue;
+    }
+    stream_mapping[i] = new_index++;  // 映射到输出流的index
 
-  // 4. 查找流对应的编码器并分配上下文
-  AVCodec *codec = avcodec_find_decoder(fmt_ctx->streams[video_index]->codecpar->codec_id);
-  if (!codec){
-    av_log(NULL, AV_LOG_ERROR, "avcodec_find_decoder failed\n");
-    goto close_output;
+    // 4.1 初始化输出流
+    AVStream *out_stream = avformat_new_stream(ofmt_ctx, NULL);
+    if (!out_stream){
+      av_log(NULL, AV_LOG_ERROR, "avformat_new_stream failed\n");
+      goto close_map;
+    }
+
+    // 4.2 拷贝流的编解码参数信息
+    ret = avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar);
+    if (ret < 0){
+      av_log(NULL, AV_LOG_ERROR, "avcodec_parameters_copy failed\n");
+      goto close_map;
+    }
+    out_stream->codecpar->codec_tag = 0;  // 让 FFmpeg 自动确定合适的编解码器标记
   }
-  AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
+  av_dump_format(ofmt_ctx, 0, dst, 1);
 
-  // 5. 读取流参数到编码器上下文, 打开编码器
-  ret = avcodec_parameters_to_context(codec_ctx, fmt_ctx->streams[video_index]->codecpar);
+  // 5. 若输出需要文件, 则打开文件
+  if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE)){
+    ret = avio_open(&ofmt_ctx->pb, dst, AVIO_FLAG_WRITE);
+    if (ret < 0){
+      av_log(NULL, AV_LOG_ERROR, "avio_open failed\n");
+      goto close_map;
+    }
+  }
+
+  // 6. 将流头写入输出
+  ret = avformat_write_header(ofmt_ctx, NULL);
   if (ret < 0){
-    av_log(NULL, AV_LOG_ERROR, "avcodec_parameters_to_context failed\n");
-    goto close_codec_ctx;
+    av_log(NULL, AV_LOG_ERROR, "avformat_write_header failed\n");
+    goto close_io;
   }
 
-  ret = avcodec_open2(codec_ctx, codec, NULL);
-  if (ret < 0){
-    av_log(NULL, AV_LOG_ERROR, "avcodec_open2 failed\n");
-    goto close_codec_ctx;
-  }
-
-  // 6. 初始化包结构以存放读入的packet
+  // 7. 初始化包结构以存放读入的packet
   AVPacket * pkt = av_packet_alloc();
   if (!pkt){
     av_log(NULL, AV_LOG_ERROR, "pkt alloc failed\n");
-    goto close_codec_ctx;
+    goto close_io;
   }
 
-  // 7. 初始化帧结构以存放读入的frame
-  // 7.1 初始化存放解码pkt后的帧结构
-  AVFrame * frame = av_frame_alloc();
-  if (!frame){
-    av_log(NULL, AV_LOG_ERROR, "frame alloc failed\n");
-    goto close_pkt;
-  }
-  // 7.2 初始化存放裁剪后的帧结构, 设置初值和分配缓冲区
-  AVFrame * frame_yuv = av_frame_alloc(); // 用于存放裁剪后输出
-  if (!frame_yuv){
-    av_log(NULL, AV_LOG_ERROR, "frame alloc failed\n");
-    goto close_pkt;
-  }
-  frame_yuv->format = AV_PIX_FMT_YUV420P;      // 设置目标像素格式
-  frame_yuv->width = codec_ctx->width;         // 设置目标宽度
-  frame_yuv->height = codec_ctx->height;       // 设置目标高度
-  ret = av_frame_get_buffer(frame_yuv, 32);    // 分配目标帧缓冲区
-  if (ret < 0){
-    av_log(NULL, AV_LOG_ERROR, "av_frame_get_buffer failed\n");
-    goto close_frame;
-  }
-
-  // 8. 初始化缩放上下文
-  struct SwsContext *sws_ctx = sws_getContext(codec_ctx->width, codec_ctx->height, codec_ctx->pix_fmt, 
-		codec_ctx->width, codec_ctx->height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
-  if (!sws_ctx){
-    av_log(NULL, AV_LOG_ERROR, "sws_getContext failed\n");
-    goto close_frame;
-  }
-
-  // 9. 读取packet(读完整的帧而不是半帧的包, 所以命名还是av_read_frame而不是av_read_packet)
-  while(av_read_frame(fmt_ctx, pkt) >= 0){
-    if (pkt->stream_index == video_index){  // 只处理目标视频流
-      // 9.1 处理packet
-      if (strstr(fmt_ctx->iformat->name, "avi") || strstr(fmt_ctx->iformat->name, "ts")){
-        // avi、mpegts都可以直接写入数据变成h264播放
-        // 9.2 发送packet到解码器
-        if (avcodec_send_packet(codec_ctx, pkt)){
-          av_log(NULL, AV_LOG_ERROR, "avcodec_send_packet failed\n");
-          goto close_frame;
-        }
-        // 9.3 从解码器接收解码后的帧
-        while(!avcodec_receive_frame(codec_ctx, frame)){
-          // 9.4 裁剪黑边
-          sws_scale(sws_ctx, (const uint8_t* const*)frame->data, frame->linesize, 0, codec_ctx->height, frame_yuv->data, frame_yuv->linesize);
-          // 9.5 保存YUV数据
-          fwrite(frame_yuv->data[0], 1, codec_ctx->width*codec_ctx->height, dst_fd);    // Y
-          fwrite(frame_yuv->data[1], 1, codec_ctx->width*codec_ctx->height/4, dst_fd);  // U
-          fwrite(frame_yuv->data[2], 1, codec_ctx->width*codec_ctx->height/4, dst_fd);  // V
-        }
-      }else{
-        av_log(NULL, AV_LOG_INFO, "%s not support yet\n", fmt_ctx->iformat->name);
+  // 8. 读取packet(读完整的帧而不是半帧的包, 所以命名还是av_read_frame而不是av_read_packet)
+  while(av_read_frame(ifmt_ctx, pkt) >= 0){
+    if ((pkt->stream_index>=0) && (pkt->stream_index<ifmt_ctx->nb_streams)
+        && (stream_mapping[pkt->stream_index] != -1)){  // 只处理目标流
+      // 8.1 对index转换
+      pkt->stream_index = stream_mapping[pkt->stream_index];
+      // 8.2 对时间戳进行时基转换
+      AVRational bq = ifmt_ctx->streams[pkt->stream_index]->time_base;
+      AVRational cq = ofmt_ctx->streams[stream_mapping[pkt->stream_index]]->time_base;
+      pkt->pts = av_rescale_q_rnd(pkt->pts, bq, cq, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+      pkt->dts = av_rescale_q_rnd(pkt->dts, bq, cq, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+      pkt->duration = av_rescale_q(pkt->duration, bq, cq);
+      pkt->pos = -1;  // 新生成的数据包, 无位置信息可用
+      // 8.3 将数据包按顺序写入输出
+      ret = av_interleaved_write_frame(ofmt_ctx, pkt);
+      if (ret < 0){
+        av_log(NULL, AV_LOG_ERROR, "av_interleaved_write_frame failed\n");
+        goto close_pkt;
       }
     }
-    // 9.6 解引用packet
+    // 8.4 解引用packet
     av_packet_unref(pkt);
   }
 
+  // 9. 将流尾写入输出
+  av_write_trailer(ofmt_ctx);
+
   // 10. 释放资源
-  sws_freeContext(sws_ctx);
-  av_frame_free(&frame_yuv);
-close_frame:
-  av_frame_free(&frame);
 close_pkt:
   av_packet_free(&pkt);
-close_codec_ctx:
-  avcodec_free_context(&codec_ctx);
+close_io:
+  if (ofmt_ctx && !(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
+    avio_closep(&ofmt_ctx->pb);
+close_map:
+  av_freep(&stream_mapping);
 close_output:
-  fclose(dst_fd);
+  avformat_free_context(ofmt_ctx);
 close_input:
-  avformat_close_input(&fmt_ctx);
+  avformat_close_input(&ifmt_ctx);
   return 0;
 }
 

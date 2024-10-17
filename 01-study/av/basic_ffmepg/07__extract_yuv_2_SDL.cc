@@ -8,6 +8,7 @@ extern "C" {
     #include <stdio.h>
     #include <libavutil/avutil.h>
     #include <libavformat/avformat.h>
+    #include <libavcodec/avcodec.h>
     #include <libswscale/swscale.h>
 }
 
@@ -24,7 +25,7 @@ public:
     int extract_yuv(uint8_t *y_plane, uint8_t *u_plane, uint8_t *v_plane);
 private:
     AVFormatContext *fmt_ctx = NULL;
-    AVCodec *codec = NULL;
+    const AVCodec *codec = NULL;
     AVCodecContext *codec_ctx = NULL;
     AVPacket * pkt = NULL;
     AVFrame * frame = NULL;

@@ -139,7 +139,7 @@ int h264_mp42annexb(AVFormatContext *fmt_ctx, AVPacket* in, FILE* dst_fd){
     // 1. 读取AVCC头部长度
     if (buf+4 > buf_end){
       av_log(NULL, AV_LOG_ERROR, "nalu size error\n");
-      return;
+      return -1;
     }
 
     for (nalu_size=0, i=0; i<4; i++){
@@ -147,7 +147,7 @@ int h264_mp42annexb(AVFormatContext *fmt_ctx, AVPacket* in, FILE* dst_fd){
     }
     if (nalu_size<0 || nalu_size>buf_end-buf){
       av_log(NULL, AV_LOG_ERROR, "nalu size error\n");
-      return;
+      return -1;
     }
     buf += 4;
 

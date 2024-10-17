@@ -1,10 +1,8 @@
 /* 解复用+解码: 从avi/ts提取yuv视频解码数据 */
 
-// [ ] TODO
-
 // gcc 05__extract_yuv.c -lavformat -lavutil -lavcodec -lswscale
 // ./a.out ../data/fly.avi ../output/out.yuv 或 ./a.out ../data/fly.ts ../output/out.yuv
-// ffplay ../output/out.yuv
+// ffplay -video_size 960x400 ../output/out.yuv
 
 #include <libavutil/log.h>
 #include <libavformat/avformat.h>
