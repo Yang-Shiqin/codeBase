@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
   FILE* dst_fd = fopen(dst, "wb");
   if (!dst_fd){
     av_log(NULL, AV_LOG_ERROR, "open output failed\n");
+    ret = -1;
     goto close_input;
   }
 
@@ -73,6 +74,7 @@ int main(int argc, char* argv[])
   audio_index = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
   if (audio_index < 0){
     av_log(NULL, AV_LOG_ERROR, "finding best stream failed\n");
+    ret = audio_index;
     goto close_output;
   }
 
@@ -81,6 +83,7 @@ int main(int argc, char* argv[])
   pkt = av_packet_alloc();
   if (!pkt){
     av_log(NULL, AV_LOG_ERROR, "pkt alloc failed\n");
+    ret = -1;
     goto close_output;
   }
 
@@ -113,6 +116,6 @@ close_output:
   fclose(dst_fd);
 close_input:
   avformat_close_input(&fmt_ctx);
-  return 0;
+  return ret;
 }
 

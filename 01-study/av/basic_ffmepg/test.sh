@@ -26,3 +26,19 @@ gcc 06__simplest_SDL.c -lSDL2
 
 g++ 07__extract_yuv_2_SDL.cc -lSDL2 -lavformat -lswscale -lavcodec -lavutil
 ./a.out ../data/fly.avi
+
+gcc 08__remux.c -lavformat -lavutil -lavcodec
+./a.out ../data/fly.avi ../output/fly.mp4
+ffplay ../output/out.mp4
+
+gcc 09__cut.c -lavformat -lavutil -lavcodec
+./a.out ../data/fly.avi ../output/fly.mp4 2.5 4
+ffplay ../output/fly.mp4
+
+gcc 10__encode_video.c -lavutil -lavcodec
+./a.out ../output/out.h264 libx264
+ffplay ../output/out.h264
+
+gcc 11__encode_audio.c -lavutil -lavcodec
+./a.out ../output/out.aac libfdk_aac
+ffplay ../output/out.aac

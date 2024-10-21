@@ -52,7 +52,6 @@ private:
 
 ExtractYUV::ExtractYUV(const char *src, int h, int w):h(h), w(w){
     int ret;
-    int l;
     // 1. 打开输入视频文件
     ret = avformat_open_input(&(this->fmt_ctx), src, NULL, NULL);
     if (ret < 0){

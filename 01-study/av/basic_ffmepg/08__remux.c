@@ -12,7 +12,7 @@
 
 // gcc 08__remux.c -lavformat -lavutil -lavcodec
 // ./a.out ../data/fly.avi ../output/fly.mp4
-// ffplay ../output/out.mp4
+// ffplay ../output/fly.mp4
 
 #include <libavutil/log.h>
 #include <libavformat/avformat.h>
@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
   avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, dst); // 根据dst文件名判断封装格式
   if (!ofmt_ctx){
     av_log(NULL, AV_LOG_ERROR, "avformat_alloc_output_context2 failed\n");
+    ret = -1;
     goto close_input;
   }
 
@@ -66,6 +67,7 @@ int main(int argc, char* argv[])
   int *stream_mapping = av_mallocz(ifmt_ctx->nb_streams * sizeof(*stream_mapping));
   if (!stream_mapping){
     av_log(NULL, AV_LOG_ERROR, "av_mallocz failed\n");
+    ret = -1;
     goto close_output;
   }
   // 遍历流
@@ -83,6 +85,7 @@ int main(int argc, char* argv[])
     AVStream *out_stream = avformat_new_stream(ofmt_ctx, NULL);
     if (!out_stream){
       av_log(NULL, AV_LOG_ERROR, "avformat_new_stream failed\n");
+      ret = -1;
       goto close_map;
     }
 
@@ -116,6 +119,7 @@ int main(int argc, char* argv[])
   AVPacket * pkt = av_packet_alloc();
   if (!pkt){
     av_log(NULL, AV_LOG_ERROR, "pkt alloc failed\n");
+    ret = -1;
     goto close_io;
   }
 
@@ -158,6 +162,6 @@ close_output:
   avformat_free_context(ofmt_ctx);
 close_input:
   avformat_close_input(&ifmt_ctx);
-  return 0;
+  return ret;
 }
 

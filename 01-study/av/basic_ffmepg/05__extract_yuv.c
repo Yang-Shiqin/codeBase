@@ -14,7 +14,6 @@
 int main(int argc, char* argv[])
 {
   int ret;
-  int l;
   int video_index;
   AVFormatContext *fmt_ctx = NULL;
   char * src = NULL;
@@ -41,7 +40,8 @@ int main(int argc, char* argv[])
     return -1;
   }
   // 2. 获取视频流详细信息并填入fmt_ctx中
-  if(avformat_find_stream_info(fmt_ctx, NULL) < 0){
+  ret = avformat_find_stream_info(fmt_ctx, NULL);
+  if(ret < 0){
     av_log(NULL, AV_LOG_ERROR, "Could not find stream information\n");
     goto close_input;
 	}
@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
   FILE* dst_fd = fopen(dst, "wb");
   if (!dst_fd){
     av_log(NULL, AV_LOG_ERROR, "open output failed\n");
+    ret = -1;
     goto close_input;
   }
 
@@ -56,6 +57,7 @@ int main(int argc, char* argv[])
   video_index = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
   if (video_index < 0){
     av_log(NULL, AV_LOG_ERROR, "finding best stream failed\n");
+    ret = video_index;
     goto close_output;
   }
 
@@ -63,6 +65,7 @@ int main(int argc, char* argv[])
   const AVCodec *codec = avcodec_find_decoder(fmt_ctx->streams[video_index]->codecpar->codec_id);
   if (!codec){
     av_log(NULL, AV_LOG_ERROR, "avcodec_find_decoder failed\n");
+    ret = -1;
     goto close_output;
   }
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
@@ -84,6 +87,7 @@ int main(int argc, char* argv[])
   AVPacket * pkt = av_packet_alloc();
   if (!pkt){
     av_log(NULL, AV_LOG_ERROR, "pkt alloc failed\n");
+    ret = -1;
     goto close_codec_ctx;
   }
 
@@ -92,12 +96,14 @@ int main(int argc, char* argv[])
   AVFrame * frame = av_frame_alloc();
   if (!frame){
     av_log(NULL, AV_LOG_ERROR, "frame alloc failed\n");
+    ret = -1;
     goto close_pkt;
   }
   // 7.2 初始化存放裁剪后的帧结构, 设置初值和分配缓冲区
   AVFrame * frame_yuv = av_frame_alloc(); // 用于存放裁剪后输出
   if (!frame_yuv){
     av_log(NULL, AV_LOG_ERROR, "frame alloc failed\n");
+    ret = -1;
     goto close_pkt;
   }
   frame_yuv->format = AV_PIX_FMT_YUV420P;      // 设置目标像素格式
@@ -114,6 +120,7 @@ int main(int argc, char* argv[])
 		codec_ctx->width, codec_ctx->height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
   if (!sws_ctx){
     av_log(NULL, AV_LOG_ERROR, "sws_getContext failed\n");
+    ret = -1;
     goto close_frame;
   }
 
@@ -126,6 +133,7 @@ int main(int argc, char* argv[])
         // 9.2 发送packet到解码器
         if (avcodec_send_packet(codec_ctx, pkt)){
           av_log(NULL, AV_LOG_ERROR, "avcodec_send_packet failed\n");
+          ret = -1;
           goto close_frame;
         }
         // 9.3 从解码器接收解码后的帧
@@ -158,6 +166,6 @@ close_output:
   fclose(dst_fd);
 close_input:
   avformat_close_input(&fmt_ctx);
-  return 0;
+  return ret;
 }
 
