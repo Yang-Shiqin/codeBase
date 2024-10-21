@@ -1,6 +1,6 @@
 /* SDL显示yuv数据 */
 
-// gcc 06__simplest_SDL.c -lSDL2
+// gcc 07__SDL_yuv.c -lSDL2
 // ./a.out
 
 #include <SDL2/SDL.h>

@@ -21,7 +21,10 @@ gcc 05__extract_yuv.c -lavformat -lavutil -lavcodec -lswscale
 ./a.out ../data/fly.avi ../output/out.yuv
 ffplay -video_size 960x400 ../output/out.yuv
 
-gcc 06__simplest_SDL.c -lSDL2
+gcc 06__extract_pcm.c -lavformat -lavutil -lavcodec
+./a.out ../data/fly.avi ../output/out.pcm
+
+gcc 07__SDL_yuv.c -lSDL2
 ./a.out
 
 g++ 07__extract_yuv_2_SDL.cc -lSDL2 -lavformat -lswscale -lavcodec -lavutil

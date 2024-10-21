@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
   char * dst = NULL;
   av_log_set_level(AV_LOG_INFO);
 
-  // 设置从命令行读入参数(输入视频，输出音频)
+  // 设置从命令行读入参数(输入format，输出yuv)
   if (argc<3){  // 错误处理
     av_log(NULL, AV_LOG_ERROR, "usage: %s <input> <output>\n", argv[0]);
     return -1;
