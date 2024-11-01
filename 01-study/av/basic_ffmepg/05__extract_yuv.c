@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     goto close_output;
   }
 
-  // 4. 查找流对应的编码器并分配上下文
+  // 4. 查找流对应的解码器并分配上下文
   const AVCodec *codec = avcodec_find_decoder(fmt_ctx->streams[video_index]->codecpar->codec_id);
   if (!codec){
     av_log(NULL, AV_LOG_ERROR, "avcodec_find_decoder failed\n");
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   }
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
 
-  // 5. 读取流参数到编码器上下文, 打开编码器
+  // 5. 读取流参数到解码器上下文, 打开解码器
   ret = avcodec_parameters_to_context(codec_ctx, fmt_ctx->streams[video_index]->codecpar);
   if (ret < 0){
     av_log(NULL, AV_LOG_ERROR, "avcodec_parameters_to_context failed\n");

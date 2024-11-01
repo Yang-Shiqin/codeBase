@@ -10,7 +10,7 @@
  * mp4->avi 会失败, 报错h264封装格式不同(可能不仅要解复用复用，还要解码编码)
  */
 
-// gcc 08__remux.c -lavformat -lavutil -lavcodec
+// gcc 11__remux.c -lavformat -lavutil -lavcodec
 // ./a.out ../data/fly.avi ../output/fly.mp4
 // ffplay ../output/fly.mp4
 

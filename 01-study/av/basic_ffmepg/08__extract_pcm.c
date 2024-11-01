@@ -1,16 +1,13 @@
-// 能播，但噪声很大，感觉可能是格式解析的不太对
-
 /* 解复用+解码: 从avi/ts提取pcm音频解码数据 */
 
-// gcc 06__extract_pcm.c -lavformat -lavutil -lavcodec
+// gcc 08__extract_pcm.c -lavformat -lavutil -lavcodec
 // ./a.out ../data/fly.avi ../output/out.pcm
-// ffplay -ar 48000 -ac 2 -f s32le ../output/out.pcm
+// ffplay -ar 48000 -ac 2 -f s16le ../output/out.pcm
 
 #include <libavutil/log.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <stdio.h>
-#include <string.h>
 
 int main(int argc, char* argv[])
 {
@@ -45,7 +42,7 @@ int main(int argc, char* argv[])
   if(ret < 0){
     av_log(NULL, AV_LOG_ERROR, "Could not find stream information\n");
     goto close_input;
-	}
+  }
 
   FILE* dst_fd = fopen(dst, "wb");
   if (!dst_fd){
@@ -62,7 +59,7 @@ int main(int argc, char* argv[])
     goto close_output;
   }
 
-  // 4. 查找流对应的编码器并分配上下文
+  // 4. 查找流对应的解码器并分配上下文
   const AVCodec *codec = avcodec_find_decoder(fmt_ctx->streams[audio_index]->codecpar->codec_id);
   if (!codec){
     av_log(NULL, AV_LOG_ERROR, "avcodec_find_decoder failed\n");
@@ -71,7 +68,7 @@ int main(int argc, char* argv[])
   }
   AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
 
-  // 5. 读取流参数到编码器上下文, 打开编码器
+  // 5. 读取流参数到解码器上下文, 打开解码器
   ret = avcodec_parameters_to_context(codec_ctx, fmt_ctx->streams[audio_index]->codecpar);
   if (ret < 0){
     av_log(NULL, AV_LOG_ERROR, "avcodec_parameters_to_context failed\n");
@@ -83,6 +80,9 @@ int main(int argc, char* argv[])
     av_log(NULL, AV_LOG_ERROR, "avcodec_open2 failed\n");
     goto close_codec_ctx;
   }
+  av_log(NULL, AV_LOG_INFO, "Sample format: %s\n", av_get_sample_fmt_name(codec_ctx->sample_fmt));
+  av_log(NULL, AV_LOG_INFO, "Sample rate: %d\n", codec_ctx->sample_rate);
+  av_log(NULL, AV_LOG_INFO, "Channels: %d\n", codec_ctx->channels);
 
   // 6. 初始化包结构以存放读入的packet
   AVPacket * pkt = av_packet_alloc();
@@ -93,7 +93,6 @@ int main(int argc, char* argv[])
   }
 
   // 7. 初始化帧结构以存放读入的frame
-  // 7.1 初始化存放解码pkt后的帧结构
   AVFrame * frame = av_frame_alloc();
   if (!frame){
     av_log(NULL, AV_LOG_ERROR, "frame alloc failed\n");
@@ -101,27 +100,51 @@ int main(int argc, char* argv[])
     goto close_pkt;
   }
   
-  // 9. 读取packet(读完整的帧而不是半帧的包, 所以命名还是av_read_frame而不是av_read_packet)
+  // 8. 读取packet(读完整的帧而不是半帧的包, 所以命名还是av_read_frame而不是av_read_packet)
   while(av_read_frame(fmt_ctx, pkt) >= 0){
     if (pkt->stream_index == audio_index){  // 只处理目标音频流
-      // 9.1 处理packet
-      // 9.2 发送packet到解码器
+      // 8.1 发送packet到解码器
       if (avcodec_send_packet(codec_ctx, pkt)){
         av_log(NULL, AV_LOG_ERROR, "avcodec_send_packet failed\n");
         ret = -1;
         goto close_frame;
       }
-      // 9.3 从解码器接收解码后的帧
-      while(avcodec_receive_frame(codec_ctx, frame)>=0){
-        // 9.5 保存YUV数据
-        fwrite(frame->data[0], 1, frame->linesize[0], dst_fd);
+      // 8.2 从解码器接收解码后的帧
+      while(avcodec_receive_frame(codec_ctx, frame) >= 0){
+        // 打印采样格式、采样率和声道数
+
+        // 8.3 计算每帧的字节数
+        int data_size = av_get_bytes_per_sample(codec_ctx->sample_fmt);
+        if (data_size < 0) {
+            av_log(NULL, AV_LOG_ERROR, "Failed to calculate data size\n");
+            ret = -1;
+            goto close_frame;
+        }
+        // 8.4 保存PCM数据
+        if (codec_ctx->sample_fmt == AV_SAMPLE_FMT_FLTP) {
+            // 将浮点平面格式(fltp)转换为整数格式(s16le)(因为ffplay不支持fltp)
+            for (int i = 0; i < frame->nb_samples; i++) {
+                for (int ch = 0; ch < codec_ctx->channels; ch++) {
+                    float *src = (float *)frame->data[ch];
+                    int16_t sample = (int16_t)(src[i] * 32767.0f);
+                    fwrite(&sample, sizeof(int16_t), 1, dst_fd);
+                }
+            }
+        } else {
+            // 处理其他格式
+            for (int i = 0; i < frame->nb_samples; i++) {
+                for (int ch = 0; ch < codec_ctx->channels; ch++) {
+                    fwrite(frame->data[ch] + data_size * i, 1, data_size, dst_fd);
+                }
+            }
+        }
       }
     }
-    // 9.6 解引用packet
+    // 8.5 解引用packet
     av_packet_unref(pkt);
   }
 
-  // 10. 释放资源
+  // 9. 释放资源
 close_frame:
   av_frame_free(&frame);
 close_pkt:

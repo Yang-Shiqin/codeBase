@@ -5,7 +5,7 @@
  * 其他都会失败, 时间戳有问题(不知道咋搞); mp4->avi报错h264封装格式不同(可能不仅要解复用复用，还要解码编码)
  */
 
-// gcc 09__cut.c -lavformat -lavutil -lavcodec
+// gcc 12__cut.c -lavformat -lavutil -lavcodec
 // ./a.out ../data/fly.avi ../output/fly.mp4 2.5 4
 // ffplay ../output/fly.mp4
 

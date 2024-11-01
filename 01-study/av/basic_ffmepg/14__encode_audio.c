@@ -1,6 +1,6 @@
 /* 音频编码:  */
 
-// gcc 11__encode_audio.c -lavutil -lavcodec
+// gcc 14__encode_audio.c -lavutil -lavcodec
 // ./a.out ../output/out.aac libfdk_aac
 // ffplay ../output/out.aac
 

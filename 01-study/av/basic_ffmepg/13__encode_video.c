@@ -1,6 +1,6 @@
 /* 视频编码: 随机生成yuv数据编码为h264 */
 
-// gcc 10__encode_video.c -lavutil -lavcodec
+// gcc 13__encode_video.c -lavutil -lavcodec
 // ./a.out ../output/out.h264 libx264
 // ffplay ../output/out.h264
 

@@ -1,4 +1,4 @@
-/* SDL显示ffmpeg从avi提取的yuv数据(05+06, 06作为一个类) */
+/* SDL显示ffmpeg从avi提取的yuv数据(05+06, 05作为一个类) */
 
 // g++ 07__extract_yuv_2_SDL.cc -lSDL2 -lavformat -lswscale -lavcodec -lavutil
 // ./a.out ../data/fly.avi 或.ts
@@ -19,7 +19,7 @@ extern "C" {
 
 class ExtractYUV{
 public:
-    int invalid = 0;  // 0: valid, >0: invalid
+    int invalid = 0;  // 错误处理, 0: valid, >0: invalid
     ExtractYUV(const char *src, int h, int w);
     ~ExtractYUV();
     int extract_yuv(uint8_t *y_plane, uint8_t *u_plane, uint8_t *v_plane);
@@ -145,22 +145,22 @@ ExtractYUV::~ExtractYUV(){
     switch (this->invalid){
     case 0:
     case AVCODEC_SEND_PKT_FAILED:
-        sws_freeContext(sws_ctx);
+        sws_freeContext(this->sws_ctx);
     case SWS_GETCONTEXT_FAILED:
     case FRAME_BUFFER_ALLOC_FAILED:
-        av_frame_free(&frame_yuv);
+        av_frame_free(&(this->frame_yuv));
     case FRAME_YUV_ALLOC_FAILED:
-        av_frame_free(&frame);
+        av_frame_free(&(this->frame));
     case FRAME_ALLOC_FAILED:
-        av_packet_free(&pkt);
+        av_packet_free(&(this->pkt));
     case PACKET_ALLOC_FAILED:
     case CODEC_OPEN_FAILED:
     case READ_PARA_FAILED:
-        avcodec_free_context(&codec_ctx);
+        avcodec_free_context(&(this->codec_ctx));
     case CODEC_NOT_FOUND:
     case FIND_BEST_STREAM_FAILED:
     case FIND_STREAM_FAILED:
-        avformat_close_input(&fmt_ctx);
+        avformat_close_input(&(this->fmt_ctx));
     case OPEN_INPUT_FAILED:;
     }
 }
