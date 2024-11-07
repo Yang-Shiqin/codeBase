@@ -31,6 +31,7 @@
         "streambuf": "c",
         "system_error": "c",
         "tuple": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "queue": "cpp"
     }
 }

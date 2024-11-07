@@ -50,7 +50,7 @@ int main(int argc, char* argv[]){
     SDL_PauseAudio(0);  // 播放音频(非0是暂停, 0是播放)
 
     // pcm数据buf
-    uint8_t *audio_chunk = (uint8_t *)malloc(BLOCK_SIZE);
+    uint8_t *audio_chunk = (uint8_t *)malloc(BLOCK_SIZE+1);
     if (!audio_chunk) {
         printf("Could not allocate audio chunk buffer!\n");
         goto close_audio;
