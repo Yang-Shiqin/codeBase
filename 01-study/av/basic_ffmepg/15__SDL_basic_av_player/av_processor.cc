@@ -1,81 +1,12 @@
 /* SDL播放音视频 */
 
-extern "C"
-{
-#include <stdio.h>
-#include <SDL2/SDL.h>
-#include <libavutil/log.h>
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-#include <libavformat/avformat.h>
-#include <libswresample/swresample.h>
-}
+#include "av_processor.h"
 
-#include "av_queue.h"
-
-#define WINDOW_W 1024
-#define WINDOW_H 480
-#define YUV_W 960
-#define YUV_H 400
 #define MAX_AUDIO_FRAME_SIZE 192000
-
-
-class AvProcessor{
-private:
-    AVFormatContext *fmt_ctx = nullptr;
-    enum ERRNO{
-        AVCODEC_SEND_PKT_FAILED = 1,
-        SWS_GETCONTEXT_FAILED,
-        A_FRAME_ALLOC_FAILED,
-        FRAME_BUFFER_ALLOC_FAILED,
-        V_FRAME_YUV_ALLOC_FAILED,
-        V_FRAME_ALLOC_FAILED,
-        A_PACKET_ALLOC_FAILED,
-        V_PACKET_ALLOC_FAILED,
-        A_CODEC_OPEN_FAILED,
-        READ_A_PARA_FAILED,
-        V_CODEC_OPEN_FAILED,
-        READ_V_PARA_FAILED,
-        A_CODEC_NOT_FOUND,
-        V_CODEC_NOT_FOUND,
-        FIND_BEST_A_STREAM_FAILED,
-        FIND_BEST_V_STREAM_FAILED,
-        FIND_STREAM_FAILED,
-        OPEN_INPUT_FAILED,
-    };
-    int is_quit = 0;
-    // audio
-    const AVCodec *a_codec = nullptr;
-    AVCodecContext *a_codec_ctx = nullptr;
-    AVPacket * a_pkt = nullptr;
-    AVFrame * a_frame = nullptr;
-    struct SwrContext *swr_ctx = nullptr;
-    int a_index;
-    AvQueue<AVPacket*> a_pkt_queue;
-    uint8_t *audio_chunk = nullptr;    // 用于存放解码后的PCM数据, 给声卡播放
-    // video
-    const AVCodec *v_codec = nullptr;
-    AVCodecContext *v_codec_ctx = nullptr;
-    AVPacket * v_pkt = nullptr;
-    AVFrame * v_frame = nullptr;
-    struct SwsContext *sws_ctx = nullptr;
-    int v_index;
-    AvQueue<AVPacket*> v_pkt_queue;
-    AvQueue<AVFrame*> v_frame_queue;
-public:
-    int invalid = 0;  // 错误处理, 0: valid, >0: invalid
-    AvProcessor(const char *src);
-    ~AvProcessor();
-    int demux();
-    static int decode_video_thread(void* data){ // 静态成员函数作为创建线程的入口
-        return ((AvProcessor*)data)->decode_video();
-    }
-    int decode_video();
-    int decode_audio();
-};
+#define MAX_AUDIO_FRAME_READ_ONCE 5
 
 // [ ] TODO: src输入其实不太好
-AvProcessor::AvProcessor(const char *src){
+AvProcessor::AvProcessor(const char *src):a_pkt_queue(100), v_pkt_queue(100), v_frame_queue(100), audio_chunk(MAX_AUDIO_FRAME_SIZE){
     int ret;
     // 1. 打开输入视频文件
     ret = avformat_open_input(&(this->fmt_ctx), src, nullptr, nullptr);
@@ -121,7 +52,7 @@ AvProcessor::AvProcessor(const char *src){
         this->invalid = A_CODEC_NOT_FOUND;
         return;
     }
-    this->v_codec_ctx = avcodec_alloc_context3(this->a_codec);
+    this->a_codec_ctx = avcodec_alloc_context3(this->a_codec);
 
     // 5. 读取视频、音频流参数到编码器上下文, 打开编码器
     ret = avcodec_parameters_to_context(this->v_codec_ctx, this->fmt_ctx->streams[this->v_index]->codecpar);
@@ -133,10 +64,12 @@ AvProcessor::AvProcessor(const char *src){
 
     ret = avcodec_open2(this->v_codec_ctx, this->v_codec, nullptr);
     if (ret < 0){
-        av_log(nullptr, AV_LOG_ERROR, "avcodec_open2 failed\n");
+        av_log(nullptr, AV_LOG_ERROR, "video avcodec_open2 failed\n");
         this->invalid = V_CODEC_OPEN_FAILED;
         return;
     }
+    this->h = this->v_codec_ctx->height;
+    this->w = this->v_codec_ctx->width;
 
     ret = avcodec_parameters_to_context(this->a_codec_ctx, this->fmt_ctx->streams[this->a_index]->codecpar);
     if (ret < 0){
@@ -147,7 +80,7 @@ AvProcessor::AvProcessor(const char *src){
 
     ret = avcodec_open2(this->a_codec_ctx, this->a_codec, nullptr);
     if (ret < 0){
-        av_log(nullptr, AV_LOG_ERROR, "avcodec_open2 failed\n");
+        av_log(nullptr, AV_LOG_ERROR, "audio avcodec_open2 failed\n");
         this->invalid = A_CODEC_OPEN_FAILED;
         return;
     }
@@ -167,37 +100,18 @@ AvProcessor::AvProcessor(const char *src){
     }
 
     // 7. 初始化帧结构以存放读入的frame
-    // 7.1 初始化存放解码pkt后的帧结构
     this->v_frame = av_frame_alloc();
     if (!this->v_frame){
         av_log(nullptr, AV_LOG_ERROR, "frame alloc failed\n");
         this->invalid = V_FRAME_ALLOC_FAILED;
         return;
     }
-    // 7.2 初始化存放裁剪后的帧结构, 设置初值和分配缓冲区
-    // this->v_frame_yuv = av_frame_alloc(); // 用于存放裁剪后输出
-    // if (!this->v_frame_yuv){
-    //     av_log(nullptr, AV_LOG_ERROR, "frame alloc failed\n");
-    //     this->invalid = V_FRAME_YUV_ALLOC_FAILED;
-    //     return;
-    // }
-    // this->v_frame_yuv->format = AV_PIX_FMT_YUV420P;      // 设置目标像素格式
-    // this->v_frame_yuv->width = this->v_codec_ctx->width;         // 设置目标宽度
-    // this->v_frame_yuv->height = this->v_codec_ctx->height;       // 设置目标高度
-    // ret = av_frame_get_buffer(this->v_frame_yuv, 32);    // 分配目标帧缓冲区
-    // if (ret < 0){
-    //     av_log(nullptr, AV_LOG_ERROR, "av_frame_get_buffer failed\n");
-    //     this->invalid = FRAME_BUFFER_ALLOC_FAILED;
-    //     return;
-    // }
     this->a_frame = av_frame_alloc();
     if (!this->a_frame){
         av_log(nullptr, AV_LOG_ERROR, "frame alloc failed\n");
         this->invalid = A_FRAME_ALLOC_FAILED;
         return;
     }
-
-    this->audio_chunk = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE);
 
     // 8. 初始化缩放上下文和音频格式转换上下文
     this->sws_ctx = sws_getContext(this->v_codec_ctx->width, this->v_codec_ctx->height, this->v_codec_ctx->pix_fmt, 
@@ -229,19 +143,27 @@ AvProcessor::~AvProcessor(){
     switch (this->invalid)
     {
     case 0:
+    case GET_BYTES_FAILED:
     case AVCODEC_SEND_PKT_FAILED:
+        swr_free(&this->swr_ctx);
+    case SWR_GETCONTEXT_FAILED:
+        sws_freeContext(this->sws_ctx);
     case SWS_GETCONTEXT_FAILED:
+        av_frame_free(&this->a_frame);
     case A_FRAME_ALLOC_FAILED:
-    case FRAME_BUFFER_ALLOC_FAILED:
-    case V_FRAME_YUV_ALLOC_FAILED:
+        av_frame_free(&this->v_frame);
     case V_FRAME_ALLOC_FAILED:
+        av_packet_free(&this->a_pkt);
     case A_PACKET_ALLOC_FAILED:
+        av_packet_free(&this->v_pkt);
     case V_PACKET_ALLOC_FAILED:
     case A_CODEC_OPEN_FAILED:
     case READ_A_PARA_FAILED:
     case V_CODEC_OPEN_FAILED:
     case READ_V_PARA_FAILED:
+        avcodec_free_context(&(this->a_codec_ctx));
     case A_CODEC_NOT_FOUND:
+        avcodec_free_context(&(this->v_codec_ctx));
     case V_CODEC_NOT_FOUND:
     case FIND_BEST_A_STREAM_FAILED:
     case FIND_BEST_V_STREAM_FAILED:
@@ -257,7 +179,9 @@ int AvProcessor::demux(){
     }
     // 创建视频解码线程
     SDL_Thread *video_tid = SDL_CreateThread(decode_video_thread, "decode_video_thread", this);
+    SDL_Thread *audio_tid = SDL_CreateThread(decode_audio_thread, "decode_audio_thread", this);
     while(1){
+        av_log(nullptr, AV_LOG_INFO, "demux\n");
         if (this->is_quit){
             // 唤醒解码线程以退出
             break;
@@ -278,6 +202,7 @@ int AvProcessor::demux(){
             }
         }
     }
+    return 0;
 }
 
 int AvProcessor::decode_video(){
@@ -288,6 +213,7 @@ int AvProcessor::decode_video(){
     //     return (this->invalid = DECODE_V_FRAME_ALLOC_FAILED);
     // }
     while(1){
+        av_log(nullptr, AV_LOG_INFO, "decode_video\n");
         // 9.1 读取packet
         pkt = this->v_pkt_queue.pop();
         // 9.2 发送packet到解码器
@@ -296,12 +222,20 @@ int AvProcessor::decode_video(){
             return (this->invalid = AVCODEC_SEND_PKT_FAILED);
         }
         // 9.3 从解码器接收解码后的帧
-        while(!avcodec_receive_frame(this->v_codec_ctx, this->v_frame)){
+        while(avcodec_receive_frame(this->v_codec_ctx, this->v_frame)>=0){
             frame = av_frame_alloc();
+            if (!frame){
+                av_log(nullptr, AV_LOG_ERROR, "frame alloc failed\n");
+                return (this->invalid = V_FRAME_ALLOC_FAILED);
+            }
             frame->format = AV_PIX_FMT_YUV420P;      // 设置目标像素格式
             frame->width = this->v_codec_ctx->width;         // 设置目标宽度
             frame->height = this->v_codec_ctx->height;       // 设置目标高度
-            av_frame_get_buffer(frame, 32);    // 分配目标帧缓冲区
+            if (av_frame_get_buffer(frame, 32) < 0) {    // 分配目标帧缓冲区
+                av_log(nullptr, AV_LOG_ERROR, "frame buffer alloc failed\n");
+                av_frame_free(&frame);
+                return (this->invalid = V_FRAME_ALLOC_FAILED);
+            }
             // 9.4 裁剪黑边
             sws_scale(this->sws_ctx, (const uint8_t* const*)this->v_frame->data, this->v_frame->linesize, 0, 
                 this->v_codec_ctx->height, frame->data, frame->linesize);
@@ -315,12 +249,10 @@ int AvProcessor::decode_video(){
 
 int AvProcessor::decode_audio(){
     AVPacket *pkt = nullptr;
-    AVFrame *frame = nullptr;
-    // if (!frame){
-    //     av_log(nullptr, AV_LOG_ERROR, "frame alloc failed\n");
-    //     return (this->invalid = DECODE_V_FRAME_ALLOC_FAILED);
-    // }
+    int data_size = 0;
+    uint8_t *buf = (uint8_t*)av_malloc(8192);
     while(1){
+        av_log(nullptr, AV_LOG_INFO, "decode_audio\n");
         // 9.1 读取packet
         pkt = this->a_pkt_queue.pop();
         // 9.2 发送packet到解码器
@@ -329,12 +261,24 @@ int AvProcessor::decode_audio(){
             return (this->invalid = AVCODEC_SEND_PKT_FAILED);
         }
         // 9.3 从解码器接收解码后的帧
-        while(!avcodec_receive_frame(this->a_codec_ctx, this->a_frame)){
+        while(avcodec_receive_frame(this->a_codec_ctx, this->a_frame) >= 0){
+            data_size = av_samples_get_buffer_size(
+                nullptr, this->a_codec_ctx->channels, this->a_frame->nb_samples, AV_SAMPLE_FMT_S16, 1);
+            if (data_size < 0)
+            {
+                av_log(nullptr, AV_LOG_ERROR, "Failed to calculate data size\n");
+                return (this->invalid = GET_BYTES_FAILED);
+            }
             // 9.4 格式转换
-            swr_convert(this->swr_ctx, &(this->audio_chunk), MAX_AUDIO_FRAME_SIZE, this->a_frame->data, this->a_frame->nb_samples);
+            swr_convert(this->swr_ctx, &buf, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)this->a_frame->data, this->a_frame->nb_samples);
+            this->audio_chunk.push(buf, data_size);
         }
         // 9.6 解引用packet
         av_packet_unref(pkt);
     }
+    av_free(buf);
     return 0;
 }
+
+void AvProcessor::audio_chunk_pop(uint8_t *stream, int len){ this->audio_chunk.pop(stream, len); }
+AVFrame* AvProcessor::video_frame_pop(){ return this->v_frame_queue.pop(); }

@@ -168,6 +168,7 @@ ExtractPCM::~ExtractPCM()
 
 int ExtractPCM::extract_pcm(uint8_t *audio_chunk, size_t* buffer_len)
 {
+    *buffer_len = 0;
     static uint8_t *audio_chunk_ptr = nullptr;
     static int data_size = 0;
     audio_chunk_ptr = audio_chunk;
