@@ -11,7 +11,7 @@ INCLUDES = -I/usr/local/include
 LIBS = -lavformat -lavcodec -lavutil -lswscale -lswresample -lSDL2
 
 # Source files
-SRCS = main.cc av_processor.cc
+SRCS = main.cc av_processor.cc av_SDL.cc
 
 # Object files
 OBJS = $(SRCS:.cc=.o)

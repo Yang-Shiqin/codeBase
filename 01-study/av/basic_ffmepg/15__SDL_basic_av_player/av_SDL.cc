@@ -1,10 +1,12 @@
 #include "av_SDL.h"
 
+// 音频数据回调函数
 void read_audio_data(void *udata, Uint8 *stream, int len){
     AvProcessor* processor = (AvProcessor*)udata;
     processor->audio_chunk_pop(stream, len);
 }
 
+// 视频定时器
 static Uint32 video_timer(Uint32 interval, void *opaque) {
   SDL_Event event;    // 初始化事件
   event.type = SDL_USEREVENT;  // 事件类型
@@ -60,7 +62,7 @@ Player::Player(AvProcessor* processor):processor(processor){
     this->spec.silence = 0;
     this->spec.samples = 2048;
     this->spec.callback = read_audio_data;
-    this->spec.userdata = &this->processor;
+    this->spec.userdata = this->processor;
     // 3.2 打开音频设备
     if(SDL_OpenAudio(&this->spec, NULL)){
         av_log(NULL, AV_LOG_ERROR, "Failed to open audio device, %s\n", SDL_GetError());
@@ -89,7 +91,7 @@ int Player::play(){
     // 1. 创建解复用线程
     SDL_Thread* demux_tid = SDL_CreateThread(AvProcessor::demux_thread, "demux_thread", this->processor);
     if (!demux_tid) {
-        av_log(NULL, AV_LOG_ERROR, "SDL_CreateThread failed\n");
+        av_log(NULL, AV_LOG_ERROR, "SDL_CreateThread demux_thread failed\n");
         return (this->invalid = CREAT_DEMUX_THREAD_FAILED);
     }
     // 2. 播放音频
@@ -103,9 +105,9 @@ int Player::play(){
         switch (this->event.type)
         {
         case SDL_QUIT:  // 退出事件
-            this->processor->is_quit = 1;
+            this->processor->stop();
+            SDL_WaitThread(demux_tid, nullptr);
             running = 0;
-            /* code */
             break;
         case SDL_KEYDOWN:   // 键盘事件
             /* code */
@@ -120,6 +122,7 @@ int Player::play(){
     return 0;
 }
 
+// 播放一帧视频
 int Player::video_display(){
     AVFrame* frame = nullptr;
     // 1. 从队列中取出视频帧

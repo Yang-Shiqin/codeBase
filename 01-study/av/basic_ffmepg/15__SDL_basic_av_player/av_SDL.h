@@ -3,10 +3,10 @@
 
 class Player{
 private:
-    AvProcessor* processor;
+    AvProcessor* processor; // 音视频处理类
     SDL_Event event;
     int invalid = 0;
-    enum ERRNO{
+    enum ERRNO{ // 错误码
         VIDEO_FRAME_BROKE = 1,
         CREAT_DEMUX_THREAD_FAILED,
         OPEN_AUDIO_FAILED,
@@ -21,9 +21,9 @@ private:
     SDL_Texture* texture;
     // audio
     SDL_AudioSpec spec;
-    int video_display();
+    int video_display();    // 显示视频
 public:
     Player(AvProcessor* processor);
     ~Player();
-    int play();
+    int play(); // 同步播放音视频
 };

@@ -6,7 +6,7 @@
 #define MAX_AUDIO_FRAME_READ_ONCE 5
 
 // [ ] TODO: src输入其实不太好
-AvProcessor::AvProcessor(const char *src):a_pkt_queue(100), v_pkt_queue(100), v_frame_queue(100), audio_chunk(MAX_AUDIO_FRAME_SIZE){
+AvProcessor::AvProcessor(const char *src){
     int ret;
     // 1. 打开输入视频文件
     ret = avformat_open_input(&(this->fmt_ctx), src, nullptr, nullptr);
@@ -138,13 +138,17 @@ AvProcessor::AvProcessor(const char *src):a_pkt_queue(100), v_pkt_queue(100), v_
     }
 }
 
-// [ ] TODO:
+// 析构函数, 错误处理和资源释放
 AvProcessor::~AvProcessor(){
     switch (this->invalid)
     {
     case 0:
     case GET_BYTES_FAILED:
+    case AV_MALLOC_FAILED:
     case AVCODEC_SEND_PKT_FAILED:
+    case CREAT_DAUDIO_THREAD_FAILED:
+    case CREAT_DVIDEO_THREAD_FAILED:
+        this->is_quit = 1;
         swr_free(&this->swr_ctx);
     case SWR_GETCONTEXT_FAILED:
         sws_freeContext(this->sws_ctx);
@@ -177,13 +181,23 @@ int AvProcessor::demux(){
     if (this->invalid){
         return this->invalid;
     }
-    // 创建视频解码线程
+    // 1. 创建视频解码线程和音频解码线程
     SDL_Thread *video_tid = SDL_CreateThread(decode_video_thread, "decode_video_thread", this);
+    if (!video_tid) {
+        av_log(NULL, AV_LOG_ERROR, "SDL_CreateThread decode_video_thread failed\n");
+        return (this->invalid = CREAT_DVIDEO_THREAD_FAILED);
+    }
     SDL_Thread *audio_tid = SDL_CreateThread(decode_audio_thread, "decode_audio_thread", this);
+    if (!audio_tid) {
+        av_log(NULL, AV_LOG_ERROR, "SDL_CreateThread decode_audio_thread failed\n");
+        return (this->invalid = CREAT_DAUDIO_THREAD_FAILED);
+    }
+    // 2. 解复用
     while(1){
-        av_log(nullptr, AV_LOG_INFO, "demux\n");
         if (this->is_quit){
-            // 唤醒解码线程以退出
+            // 等待解码线程退出
+            SDL_WaitThread(video_tid, nullptr);
+            SDL_WaitThread(audio_tid, nullptr);
             break;
         }
         AVPacket *pkt = av_packet_alloc();
@@ -195,9 +209,9 @@ int AvProcessor::demux(){
                 break;
             }
         }else{
-            if (pkt->stream_index == this->v_index){
+            if (pkt->stream_index == this->v_index){    // 视频流
                 this->v_pkt_queue.push(pkt);
-            }else if (pkt->stream_index == this->a_index){
+            }else if (pkt->stream_index == this->a_index){  // 音频流
                 this->a_pkt_queue.push(pkt);
             }
         }
@@ -208,21 +222,21 @@ int AvProcessor::demux(){
 int AvProcessor::decode_video(){
     AVPacket *pkt = nullptr;
     AVFrame *frame = nullptr;
-    // if (!frame){
-    //     av_log(nullptr, AV_LOG_ERROR, "frame alloc failed\n");
-    //     return (this->invalid = DECODE_V_FRAME_ALLOC_FAILED);
-    // }
+    // 视频解码
     while(1){
-        av_log(nullptr, AV_LOG_INFO, "decode_video\n");
-        // 9.1 读取packet
+        if (this->is_quit){
+            return 0;
+        }
+        // 1. 读取packet
         pkt = this->v_pkt_queue.pop();
-        // 9.2 发送packet到解码器
+        // 2. 发送packet到解码器
         if (avcodec_send_packet(this->v_codec_ctx, pkt)){
             av_log(nullptr, AV_LOG_ERROR, "avcodec_send_packet failed\n");
             return (this->invalid = AVCODEC_SEND_PKT_FAILED);
         }
-        // 9.3 从解码器接收解码后的帧
+        // 3. 从解码器接收解码后的帧
         while(avcodec_receive_frame(this->v_codec_ctx, this->v_frame)>=0){
+            // 3.1 分配帧
             frame = av_frame_alloc();
             if (!frame){
                 av_log(nullptr, AV_LOG_ERROR, "frame alloc failed\n");
@@ -236,12 +250,13 @@ int AvProcessor::decode_video(){
                 av_frame_free(&frame);
                 return (this->invalid = V_FRAME_ALLOC_FAILED);
             }
-            // 9.4 裁剪黑边
+            // 3.2 裁剪黑边
             sws_scale(this->sws_ctx, (const uint8_t* const*)this->v_frame->data, this->v_frame->linesize, 0, 
                 this->v_codec_ctx->height, frame->data, frame->linesize);
+            // 3.3 压入帧队列
             v_frame_queue.push(frame);
         }
-        // 9.6 解引用packet
+        // 4. 解引用packet
         av_packet_unref(pkt);
     }
     return 0;
@@ -251,29 +266,40 @@ int AvProcessor::decode_audio(){
     AVPacket *pkt = nullptr;
     int data_size = 0;
     uint8_t *buf = (uint8_t*)av_malloc(8192);
+    if (!buf){
+        av_log(nullptr, AV_LOG_ERROR, "av_malloc failed\n");
+        return (this->invalid = AV_MALLOC_FAILED);
+    }
+    // 音频解码
     while(1){
-        av_log(nullptr, AV_LOG_INFO, "decode_audio\n");
-        // 9.1 读取packet
+        if (this->is_quit){
+            return 0;
+        }
+        // 1. 读取packet
         pkt = this->a_pkt_queue.pop();
-        // 9.2 发送packet到解码器
+        // 2. 发送packet到解码器
         if (avcodec_send_packet(this->a_codec_ctx, pkt)){
             av_log(nullptr, AV_LOG_ERROR, "avcodec_send_packet failed\n");
+            av_free(buf);
             return (this->invalid = AVCODEC_SEND_PKT_FAILED);
         }
-        // 9.3 从解码器接收解码后的帧
+        // 3. 从解码器接收解码后的帧
         while(avcodec_receive_frame(this->a_codec_ctx, this->a_frame) >= 0){
+            // 3.1 计算数据大小
             data_size = av_samples_get_buffer_size(
                 nullptr, this->a_codec_ctx->channels, this->a_frame->nb_samples, AV_SAMPLE_FMT_S16, 1);
             if (data_size < 0)
             {
                 av_log(nullptr, AV_LOG_ERROR, "Failed to calculate data size\n");
+                av_free(buf);
                 return (this->invalid = GET_BYTES_FAILED);
             }
-            // 9.4 格式转换
+            // 3.2 格式转换
             swr_convert(this->swr_ctx, &buf, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)this->a_frame->data, this->a_frame->nb_samples);
+            // 3.3 压入音频帧队列
             this->audio_chunk.push(buf, data_size);
         }
-        // 9.6 解引用packet
+        // 4. 解引用packet
         av_packet_unref(pkt);
     }
     av_free(buf);

@@ -1,3 +1,4 @@
+/* 因为是模板类，所以声明和定义要放在一起 */
 #pragma once
 #include <queue>
 #include <algorithm>
@@ -7,32 +8,35 @@ extern "C"
 #include <SDL2/SDL.h>
 }
 
-// 流队列，如音/视频编码数据包队列、音/视频帧队列
+/* 支持多线程的单个元素进队出队的队列，用于如音/视频编码数据包队列、视频帧队列 */
 template <typename T>
 class AvQueue
 {
 private:
-    std::queue<T> q;  // 队列
-    const std::size_t q_len = 100;     // 队列长度
-    SDL_mutex *mutex; // 互斥锁
-    SDL_cond *cond;   // 条件变量
+    std::queue<T> q;    // 队列
+    const std::size_t q_len = 100;  // 队列长度
+    SDL_mutex *mutex;   // 互斥锁
+    SDL_cond *cond;     // 条件变量
+    int running = 1;    // 用于外部停止队列的阻塞
 public:
     AvQueue();
     AvQueue(std::size_t q_len);
+    // 禁用拷贝构造函数和赋值运算符(浅拷贝对于互斥锁和条件变量是不安全的)
     AvQueue(const AvQueue&) = delete;
     AvQueue& operator=(const AvQueue&) = delete;
     ~AvQueue();
-    void push(T element);
-    T pop();
+    void push(T element);   // 进队
+    T pop();                // 出队
     int size(){
-        size_t ret;
-        SDL_LockMutex(this->mutex);
-        ret = this->q.size();
-        SDL_UnlockMutex(this->mutex);
-        return ret;
+        return this->q.size();
+    }
+    void stop(){    // 用于外部停止队列的阻塞
+        this->running = 0;
+        SDL_CondBroadcast(this->cond);
     }
 };
 
+// 支持多线程的单个元素进队出队的队列，用于如音/视频编码数据包队列、视频帧队列
 template <typename T>
 class AvBufferQueue{
 private:
@@ -43,20 +47,21 @@ private:
     SDL_cond *cond;
     int head;
     int tail;
+    int running = 1;
 public:
     AvBufferQueue();
     AvBufferQueue(std::size_t q_len);
     AvBufferQueue(const AvBufferQueue&) = delete;
     AvBufferQueue& operator=(const AvBufferQueue&) = delete;
     ~AvBufferQueue();
-    void push(T* element, std::size_t len);
-    void pop(T* element, std::size_t len);
+    void push(T* element, std::size_t len);  // 进队
+    void pop(T* element, std::size_t len);   // 出队
     std::size_t size(){
-        size_t ret;
-        SDL_LockMutex(this->mutex);
-        ret = this->q_size;
-        SDL_UnlockMutex(this->mutex);
-        return ret;
+        return this->q.size();
+    }
+    void stop(){        // 用于外部停止队列的阻塞
+        this->running = 0;
+        SDL_CondBroadcast(this->cond);
     }
 };
 
@@ -78,22 +83,32 @@ AvQueue<T>::~AvQueue(){
     SDL_DestroyCond(this->cond);
 }
 
+// 入队, 将element放入this->q, 并唤醒等待的线程(this->running=0时不保证正确性)
 template <typename T>
 void AvQueue<T>::push(T element){
     SDL_LockMutex(this->mutex);
-    while (this->q.size() >= this->q_len){   // 队列长度大于等于最大长度时等待
+    while (this->running && this->q.size() >= this->q_len){   // 队列长度大于等于最大长度时等待
         SDL_CondWait(this->cond, this->mutex);
+    }
+    if (!this->running){
+        SDL_UnlockMutex(this->mutex);
+        return;
     }
     this->q.push(element);
     SDL_CondBroadcast(this->cond);
     SDL_UnlockMutex(this->mutex);
 }
 
+// 出队, 从this->q pop出一个元素, 并唤醒等待的线程(this->running=0时不保证正确性)
 template <typename T>
 T AvQueue<T>::pop(){
     SDL_LockMutex(this->mutex);
-    while (this->q.empty()){   // 队列长度小于0时等待
+    while (this->running && this->q.empty()){   // 队列长度小于0时等待
         SDL_CondWait(this->cond, this->mutex);
+    }
+    if (!this->running){
+        SDL_UnlockMutex(this->mutex);
+        return T();
     }
     T ret = this->q.front();
     this->q.pop();
@@ -129,11 +144,16 @@ AvBufferQueue<T>::~AvBufferQueue(){
     SDL_DestroyCond(this->cond);
 }
 
+// 入队, 将长度为len的element放入this->q, 并唤醒等待的线程(this->running=0时不保证正确性)
 template <typename T>
 void AvBufferQueue<T>::push(T* element, std::size_t len){
     SDL_LockMutex(this->mutex);
-    while (this->q_size+len >= this->q_len){
+    while (this->running && this->q_size+len >= this->q_len){
         SDL_CondWait(this->cond, this->mutex);
+    }
+    if (!this->running){
+        SDL_UnlockMutex(this->mutex);
+        return;
     }
     int l = std::min(len, this->q_len - this->tail);
     memcpy(this->q + this->tail, element, l);
@@ -144,11 +164,16 @@ void AvBufferQueue<T>::push(T* element, std::size_t len){
     SDL_UnlockMutex(this->mutex);
 }
 
+// 出队, 从this->q pop出len个元素放入element地址, 并唤醒等待的线程(this->running=0时不保证正确性)
 template <typename T>
 void AvBufferQueue<T>::pop(T* element, std::size_t len){
     SDL_LockMutex(this->mutex);
-    while (this->q_size < len){
+    while (this->running && this->q_size < len){
         SDL_CondWait(this->cond, this->mutex);
+    }
+    if (!this->running){
+        SDL_UnlockMutex(this->mutex);
+        return;
     }
     int l = std::min(len, this->q_len - this->head);
     memcpy(element, this->q + this->head, l);
