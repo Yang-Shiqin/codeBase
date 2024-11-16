@@ -3,9 +3,12 @@
 // make
 // ./BasicAvPlayer ../../data/human.mp4
 
+// [ ] TODO: 视频更快, 不是真的同步
+
 #include "av_SDL.h"
 
 int main(int argc, char *argv[]){
+    av_log_set_level(AV_LOG_INFO);  // 设置日志级别
     // 0. 命令行参数解析
     if (argc < 2) {  // 错误处理
         av_log(NULL, AV_LOG_ERROR, "usage: %s <input>\n", argv[0]);
