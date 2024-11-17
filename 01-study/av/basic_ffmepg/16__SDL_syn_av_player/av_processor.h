@@ -74,12 +74,10 @@ public:
     int demux();            // 解复用线程主体
     int decode_video();     // 视频解码线程主体
     int decode_audio();     // 音频解码线程主体
-    double get_video_clock(AVFrame* frame);
-    double get_audio_clock();
+    double get_video_clock(AVFrame* frame); // 计算视频时钟
+    double get_audio_clock();               // 计算音频时钟
     void audio_chunk_pop(uint8_t *stream, int len); // 从音频帧队列中取出PCM数据
     AVFrame* video_frame_pop();                     // 从视频帧队列中取出视频帧
-    int get_h(){ return this->h; }
-    int get_w(){ return this->w; }
     void stop(){    // 停止线程
         this->is_quit = 1;
         this->a_pkt_queue.stop();
@@ -87,4 +85,9 @@ public:
         this->v_frame_queue.stop();
         this->audio_chunk.stop();
     }
+    // 获取private属性值
+    int get_h(){ return this->h; }
+    int get_w(){ return this->w; }
+    int get_channels(){ return this->a_codec_ctx->channels; }
+    int get_sample_rate(){ return this->a_codec_ctx->sample_rate; }
 };

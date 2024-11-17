@@ -1,9 +1,9 @@
-/* 最基础基于SDL+FFMpeg播放器, 能够播放音视频和退出 */
+/* 最基础基于SDL+FFMpeg播放器, 能够播放音视频和退出, 实现较精细的同步 */
 
 // make
 // ./BasicAvPlayer ../../data/human.mp4
 
-// [ ] TODO: 视频更快, 不是真的同步
+// [ ] TODO: 视频pts无效时没有处理, 而且继续用来计算
 
 #include "av_SDL.h"
 

@@ -284,6 +284,7 @@ int AvProcessor::decode_audio(){
         // 1. 读取packet
         pkt = this->a_pkt_queue.pop();
         this->next_pts = pkt->pts;
+        av_log(nullptr, AV_LOG_DEBUG, "a pkt->pts %ld\n", pkt->pts);
         // 2. 发送packet到解码器
         if (avcodec_send_packet(this->a_codec_ctx, pkt)){
             av_log(nullptr, AV_LOG_ERROR, "avcodec_send_packet failed\n");
@@ -313,12 +314,15 @@ int AvProcessor::decode_audio(){
     return 0;
 }
 
+// 计算视频时钟, 单位为s
 double AvProcessor::get_video_clock(AVFrame* frame){
     return frame->pts*av_q2d(this->fmt_ctx->streams[this->v_index]->time_base);
 }
 
+// 计算音频时钟, 单位为s
 double AvProcessor::get_audio_clock(){
-    double audio_clock = this->next_pts * av_q2d(this->fmt_ctx->streams[this->a_index]->time_base);
+    // 公式: 当前帧实际时间 = pts x time_base - 已解码未播放字节/(channels x 样本位深 x sample_rate)
+    double audio_clock = this->next_pts * av_q2d(this->fmt_ctx->streams[this->a_index]->time_base); // 下一音频包的pts
     audio_clock -= (double)(this->audio_chunk.size()) / 
         (double)(this->a_codec_ctx->channels*this->a_codec_ctx->sample_rate*
         av_get_bytes_per_sample(this->a_codec_ctx->sample_fmt));

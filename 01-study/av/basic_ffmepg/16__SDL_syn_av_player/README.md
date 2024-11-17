@@ -1,4 +1,4 @@
-在 Basic AV Player 的基础上实现更精细的同步
+在 Basic AV Player 的基础上实现更精细的同步(视频同步到音频)
 
 ~~增加堆 `av_queue.h`、`av_processor.h`~~
 
@@ -110,5 +110,71 @@ AvQueue<AVPacket*, std::priority_queue<AVPacket*, std::vector<AVPacket*>, Compar
 
 ## 同步
 `av_processor` 增加获取音视频时间戳的函数
+```cpp
+// 计算视频时钟, 单位为s
+double AvProcessor::get_video_clock(AVFrame* frame){
+    return frame->pts*av_q2d(this->fmt_ctx->streams[this->v_index]->time_base);
+}
+
+// 计算音频时钟, 单位为s
+double AvProcessor::get_audio_clock(){
+    // 公式: 当前帧实际时间 = pts x time_base - 已解码未播放字节/(channels x 样本位深 x sample_rate)
+    double audio_clock = this->next_pts * av_q2d(this->fmt_ctx->streams[this->a_index]->time_base); // 下一音频包的pts
+    audio_clock -= (double)(this->audio_chunk.size()) / 
+        (double)(this->a_codec_ctx->channels*this->a_codec_ctx->sample_rate*
+        av_get_bytes_per_sample(this->a_codec_ctx->sample_fmt));
+    return audio_clock;
+}
+```
 
 `av_SDL` 增加根据时间戳设置delay时长的函数
+```cpp
+// 原本调用video_display的地方改为调用timer_video_display
+
+int Player::timer_video_display(){
+    static double first_delay = 0;  // 用来同步音视频第一个帧所需的延迟
+    static int flag = 0;
+    // 1. 从队列中取出视频帧
+    if (this->frame==nullptr)
+        this->frame = this->processor->video_frame_pop();
+    if (!this->frame) {
+        av_log(NULL, AV_LOG_ERROR, "frame is NULL\n");
+        return (this->invalid = VIDEO_FRAME_BROKE);
+    }
+    // 2. 计算视频同步到音频需要的延迟(下一视频帧时间戳-音频帧时间戳, <0则说明视频慢了, 应加速播放)
+    double delay = this->processor->get_video_clock(this->frame) - this->processor->get_audio_clock()-first_delay;
+    if (!flag){     // 只记录第一次的延迟
+        first_delay = delay;
+        flag = 1;
+    }
+    av_log(NULL, AV_LOG_DEBUG, "delay: %f\n", delay);
+    
+    if (delay <= 0){    // 视频慢了
+        this->video_display(this->frame);   // 显示视频
+        this->frame = nullptr;
+        SDL_AddTimer(1, video_timer, this->processor);  // 1ms后再次调用timer_video_display
+    }else{  // 视频快了
+        // delay是s为单位, 而SDL_AddTimer是ms为单位, 所以delay*1000, +0.5是向上取整, 防止下次调用没到时间又重复delay了很小一个时间
+        SDL_AddTimer((int)(delay*1000+0.5), video_timer, this->processor);  // 延迟快了的时间后再次调用timer_video_display
+    }
+    return 0;
+}
+
+// 播放一帧视频
+int Player::video_display(AVFrame* frame){
+    // 2. 更新纹理
+    SDL_UpdateYUVTexture(this->texture, NULL, frame->data[0], frame->linesize[0], 
+        frame->data[1], frame->linesize[1], frame->data[2], frame->linesize[2]);
+    // 3. 清空渲染器
+    SDL_RenderClear(this->renderer);
+    // 4. 拷贝纹理到渲染器
+    SDL_RenderCopy(this->renderer, this->texture, NULL, NULL);
+    // 5. 显示
+    SDL_RenderPresent(this->renderer);
+    // 6. 释放帧
+    av_freep(&frame);
+    return 0;
+}
+```
+
+更详细的说明见笔记《基于FFMpeg+SDL的视频播放器》的“方案2：视频同步到音频”章节

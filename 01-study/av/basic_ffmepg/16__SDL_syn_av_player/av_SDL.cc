@@ -56,9 +56,9 @@ Player::Player(AvProcessor* processor):processor(processor){
 
     // 3. 初始化音频相关
     // 3.1 设置参数(回调函数是因为声卡是拉数据而不是我们推给他)
-    this->spec.freq = 48000;    // [ ] TODO: 
+    this->spec.freq = this->processor->get_sample_rate();
     this->spec.format = AUDIO_S16SYS;
-    this->spec.channels = 2;
+    this->spec.channels = this->processor->get_channels();
     this->spec.silence = 0;
     this->spec.samples = 2048;
     this->spec.callback = read_audio_data;
@@ -124,6 +124,8 @@ int Player::play(){
 }
 
 int Player::timer_video_display(){
+    static double first_delay = 0;  // 用来同步音视频第一个帧所需的延迟
+    static int flag = 0;
     // 1. 从队列中取出视频帧
     if (this->frame==nullptr)
         this->frame = this->processor->video_frame_pop();
@@ -131,14 +133,21 @@ int Player::timer_video_display(){
         av_log(NULL, AV_LOG_ERROR, "frame is NULL\n");
         return (this->invalid = VIDEO_FRAME_BROKE);
     }
-    double delay = this->processor->get_video_clock(this->frame) - this->processor->get_audio_clock();
+    // 2. 计算视频同步到音频需要的延迟(下一视频帧时间戳-音频帧时间戳, <0则说明视频慢了, 应加速播放)
+    double delay = this->processor->get_video_clock(this->frame) - this->processor->get_audio_clock()-first_delay;
+    if (!flag){     // 只记录第一次的延迟
+        first_delay = delay;
+        flag = 1;
+    }
+    av_log(NULL, AV_LOG_DEBUG, "delay: %f\n", delay);
     
-    if (delay <= 0){
-        this->video_display(this->frame);
+    if (delay <= 0){    // 视频慢了
+        this->video_display(this->frame);   // 显示视频
         this->frame = nullptr;
-        SDL_AddTimer(1, video_timer, this->processor);
-    }else{
-        SDL_AddTimer((int)(delay*1000+0.5), video_timer, this->processor);
+        SDL_AddTimer(1, video_timer, this->processor);  // 1ms后再次调用timer_video_display
+    }else{  // 视频快了
+        // delay是s为单位, 而SDL_AddTimer是ms为单位, 所以delay*1000, +0.5是向上取整, 防止下次调用没到时间又重复delay了很小一个时间
+        SDL_AddTimer((int)(delay*1000+0.5), video_timer, this->processor);  // 延迟快了的时间后再次调用timer_video_display
     }
     return 0;
 }
