@@ -1,4 +1,4 @@
-在 Basic AV Player 的基础上实现更精细的同步(视频同步到音频)
+在 15__SDL_basic_av_player 的基础上实现更精细的同步(视频同步到音频), 增加空格暂停继续
 
 ~~增加堆 `av_queue.h`、`av_processor.h`~~
 
@@ -108,7 +108,7 @@ AvQueue<AVPacket*, std::priority_queue<AVPacket*, std::vector<AVPacket*>, Compar
 ...}
 ```
 
-## 同步
+## 同步到音频
 `av_processor` 增加获取音视频时间戳的函数
 ```cpp
 // 计算视频时钟, 单位为s
@@ -178,3 +178,37 @@ int Player::video_display(AVFrame* frame){
 ```
 
 更详细的说明见笔记《基于FFMpeg+SDL的视频播放器》的“方案2：视频同步到音频”章节
+
+## 暂停继续
+`av_SDL.cc` 增加空格暂停继续音频, 因为已经实现较为精细的音视频同步，所以视频也会相应暂停和继续
+```cpp
+int Player::play(){
+    ...
+    int running = 1;    // 第1位是是否播放, 第2位是是否暂停
+    while(running){
+        SDL_WaitEvent(&this->event);
+        switch (this->event.type)
+        {
+        case SDL_QUIT:  // 退出事件
+            this->processor->stop();
+            SDL_WaitThread(demux_tid, nullptr);
+            running = 0;
+            break;
+        case SDL_KEYDOWN:   // 键盘事件
+            switch (event.key.keysym.sym){
+            case SDLK_SPACE:                // 增加键盘事件中的空格事件处理
+                running ^= 2;   // 暂停
+                SDL_PauseAudio(running & 2);    // 暂停音频
+                break;
+            }
+            break;
+        case SDL_USEREVENT: // 视频定时播放事件
+            this->timer_video_display();
+            break;
+        default:
+            break;
+        }
+    }
+    ...
+}
+```

@@ -1,5 +1,13 @@
 #include "av_SDL.h"
 
+extern "C"
+{
+#include <libavutil/time.h>
+}
+
+#define AV_NOSYNC_THRESHOLD  10.0
+#define AUDIO_DIFF_AVG_NB 20
+
 // 音频数据回调函数
 void read_audio_data(void *udata, Uint8 *stream, int len){
     AvProcessor* processor = (AvProcessor*)udata;
@@ -114,7 +122,14 @@ int Player::play(){
             switch (event.key.keysym.sym){
             case SDLK_SPACE:
                 running ^= 2;   // 暂停
-                SDL_PauseAudio(running & 2);    // 暂停音频
+                SDL_PauseAudio(running & 2);    // [ ] TODO: 不知道一块暂停会不会更好一些
+                this->pause_player_clock(running & 2);  // 暂停播放器时钟
+                break;
+            case SDLK_LEFT:     // 快退5s
+                this->player_clock += 5000000;
+                break;
+            case SDLK_RIGHT:    // 快进5s
+                this->player_clock -= 5000000;
                 break;
             }
             break;
@@ -140,13 +155,14 @@ int Player::timer_video_display(){
     }
     // 2. 计算视频同步到音频需要的延迟(下一视频帧时间戳-音频帧时间戳, <0则说明视频慢了, 应加速播放)
     double video_clock = this->processor->get_video_clock(this->frame);
-    double audio_clock = this->processor->get_audio_clock();
-    double delay = video_clock - audio_clock - first_delay;
-    av_log(NULL, AV_LOG_DEBUG, "delay: %f, video_clock: %f, audio_clock: %f\n", delay, video_clock, audio_clock);
-    if (!flag){     // 只记录第一次的延迟
-        first_delay = delay;
-        flag = 1;
-    }
+    double player_clock = this->get_player_clock();
+    double delay = video_clock - player_clock;
+    // double delay = video_clock - player_clock - first_delay;
+    // av_log(NULL, AV_LOG_DEBUG, "delay: %f, video_clock: %f, player_clock: %f\n", delay, video_clock, player_clock);
+    // if (!flag){     // 只记录第一次的延迟
+    //     first_delay = delay;
+    //     flag = 1;
+    // }
     av_log(NULL, AV_LOG_DEBUG, "delay: %f\n", delay);
     
     if (delay <= 0){    // 视频慢了
@@ -174,4 +190,15 @@ int Player::video_display(AVFrame* frame){
     // 6. 释放帧
     av_freep(&frame);
     return 0;
+}
+
+double Player::get_player_clock(){
+    // 计算已经播放了多少秒. av_gettime是当前时间戳, player_clock是开始时间戳(会随暂停和快进快退而改变)
+    return (double)(av_gettime()-this->player_clock)/1000000.0; // 微秒->秒
+}
+
+// is_pause=0(b00): 继续(+), is_pause=2(b10): 暂停(-)
+// 暂停时减去当前时刻, 继续时加上当前时刻
+void Player::pause_player_clock(int is_pause){
+    this->player_clock += (1-is_pause)*av_gettime();
 }

@@ -176,8 +176,10 @@ void AvBufferQueue<T>::pop(T* element, std::size_t len){
         return;
     }
     int l = std::min(len, this->q_len - this->head);
-    memcpy(element, this->q + this->head, l);
-    memcpy(element + l, this->q, len - l);
+    if (element){
+        memcpy(element, this->q + this->head, l);
+        memcpy(element + l, this->q, len - l);
+    }   // 如果element为空则直接抛弃
     this->head = (this->head + len) % this->q_len;
     this->q_size -= len;
     SDL_CondBroadcast(this->cond);
