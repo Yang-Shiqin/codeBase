@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build BasicAvPlayer",
+      "type": "shell",
+      "command": "make",
+      "args": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"],
+      "options": {
+        "cwd": "${workspaceFolder}/01-study/av/basic_ffmepg/17__SDL_av_player" // 指定子目录
+      }
+    },
+    {
+      "label": "Clean BasicAvPlayer",
+      "type": "shell",
+      "command": "make",
+      "args": ["clean"],
+      "group": "build",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/01-study/av/basic_ffmepg/17__SDL_av_player"
+      }
+    }
+  ]
+}

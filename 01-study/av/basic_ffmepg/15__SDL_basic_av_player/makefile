@@ -17,7 +17,7 @@ SRCS = main.cc av_processor.cc av_SDL.cc
 OBJS = $(SRCS:.cc=.o)
 
 # Executable name
-TARGET = BasicAVPlayer
+TARGET = BasicAvPlayer
 
 # Default target
 all: $(TARGET)

@@ -1,4 +1,4 @@
-/* 解复用+解码: 从avi/ts提取yuv视频解码数据 */
+/* 解复用+解码: 从avi/ts提取yuv视频解码数据(mp4不能直接解封装后播放, 因为其为容器式数据, 解封装后裸流没有携带头信息, ffplay是流式解析) */
 
 // gcc 05__extract_yuv.c -lavformat -lavutil -lavcodec -lswscale
 // ./a.out ../data/fly.avi ../output/out.yuv 或 ./a.out ../data/fly.ts ../output/out.yuv

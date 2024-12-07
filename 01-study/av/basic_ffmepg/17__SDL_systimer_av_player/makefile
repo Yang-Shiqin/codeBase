@@ -1,1 +1,0 @@
-../16__SDL_syn_av_player/makefile
