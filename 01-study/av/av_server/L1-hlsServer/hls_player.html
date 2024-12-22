@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>HlsPlayer</title>
+    <!-- video.js(提供基础的视频播放器功能和样式), 样式:video-js.css -->
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet">
+</head>
+<body style="text-align:center;">
+    <h1>网页端播放 HLS (.m3u8) 视频</h1>
+    <p>借助 video.js 和 videojs-contrib-hls</p>
+    <p>由于 videojs-contrib-hls 需要通过 XHR 来获取解析 m3u8 文件，因此会遇跨域问题，请设置浏览器运行跨域</p>
+
+    <video id="video" class="video-js vjs-default-skin vjs-big-play-centered" controls style="margin:auto;" width="640" height="268">
+        <!-- 设置为L1客户端请求的地址(ffplay后的) -->
+        <source src="http://127.0.0.1:8080/index.m3u8" type="application/x-mpegURL">
+    </video>
+
+    <!-- video.js(提供基础的视频播放器功能和样式), 脚本:video.min.js -->
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+    <!-- 网页端浏览器不支持播放 m3u8，需 videojs-contrib-hls 来解决 -->
+    <script src="https://unpkg.com/videojs-contrib-hls/dist/videojs-contrib-hls.js"></script>
+    <!-- 播放器初始化 -->
+    <script>
+        const player = videojs('video');    // videojs('video') 将 ID 为 video 的 <video> 元素与 Video.js 绑定，形成一个功能完整的播放器实例
+        player.play();
+    </script>
+</body>
+</html>

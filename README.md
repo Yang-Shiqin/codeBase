@@ -10,6 +10,9 @@
 │   ├── Algorithms          # 数据结构预算法
 │   │   ├── algo_go         # go实现数据结构与算法
 │   │   └── note
+│   ├── av                  # 音视频学习, 基本在虚拟机上
+│   │   ├── basic_ffmpeg    # ffmpeg学习, 最终开发出一个基于FFMpeg+SDL的视频播放器(17)
+│   │   └── av_server       # 流媒体服务器(hls/http-flv等, rtmp有单独仓库)
 │   ├── c
 │   ├── c++_learing         # 学c++过程中的练习（帮助理解c++特性）
 │   ├── go_learning         # 学go过程中的练习

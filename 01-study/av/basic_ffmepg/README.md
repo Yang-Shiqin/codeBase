@@ -1,6 +1,6 @@
 ## 环境
 ### 2024/10/17之后
-实验室新服务器上vmware虚拟机，manjaro
+实验室新服务器上vmware虚拟机，manjaro(但其实没用)
 ```bash
 lsb_release -a
 LSB Version:    n/a
@@ -73,4 +73,4 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 ## 相关笔记
 - `tec/Audio&Video/FFMpeg`
-- 
+- `tec/Audio&Video/基于FFMpeg+SDL的视频播放器`
