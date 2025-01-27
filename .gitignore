@@ -1,4 +1,6 @@
+.DS_Store
 03-tmp/*
+**/build/*
 # Prerequisites
 *.d
 
