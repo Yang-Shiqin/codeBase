@@ -137,9 +137,9 @@ class Bili:
     # 爬取特定的一个视频的例子，是小拉泽的一个零食视频（因为没登陆所以码率较低
     def example(self):
         params = {
-            'bvid'  : 'BV1nN411i7mg',
+            'bvid'  : 'BV1Y5WVe5Ei5',
             'qn'    : 64,
-            'cid'   : 1260891578,
+            'cid'   : 500001658068429,
             'platform'  : 'html5',
             'high_quality'  : 1,
         }
@@ -156,7 +156,7 @@ class Bili:
                 f.write(content)
 
 b = Bili()
-#b.example()
-b.download_search('你好')
+b.example()
+#b.download_search('你好')
 end_time = time.time()
 logger.info(f'used time: {end_time-start_time}s.')
